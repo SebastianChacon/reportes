@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bark-50: #f6f7f5;
+  --color-bark-100: #e9ece7;
+  --color-bark-200: #d3d9cf;
+  --color-bark-700: #3f4a3c;
+  --color-bark-900: #1c211b;
+
+  --color-leaf-50: #f0fdf4;
+  --color-leaf-100: #dcfce7;
+  --color-leaf-200: #bbf7d0;
+  --color-leaf-500: #22c55e;
+  --color-leaf-600: #16a34a;
+  --color-leaf-700: #15803d;
+  --color-leaf-800: #166534;
+  --color-leaf-900: #14532d;
+
+  --color-clay-500: #f97316;
+  --color-clay-600: #ea580c;
+}
+
+:root {
+  --surface: #ffffff;
+  --surface-sunk: #f6f7f5;
+  --surface-raised: #ffffff;
+  --ink: #1c211b;
+  --ink-muted: #6b7280;
+  --line: #e4e7e2;
+  --accent: #15803d;
+  --accent-soft: #f0fdf4;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #141713;
+    --surface-sunk: #0d0f0c;
+    --surface-raised: #1c211b;
+    --ink: #eef1ec;
+    --ink-muted: #9ca3af;
+    --line: #2b322a;
+    --accent: #4ade80;
+    --accent-soft: #14271b;
+    color-scheme: dark;
+  }
+}
+
+html {
+  /* Never let a wide table push the whole page sideways on a phone. */
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--surface-sunk);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Room for the fixed bottom nav bar. */
+  padding-bottom: env(safe-area-inset-bottom);
+  overscroll-behavior-y: none;
+}
+
+/* iOS zooms the page when a focused input is under 16px. Never go below it. */
+input,
+textarea,
+select,
+button {
+  font-size: max(16px, 1rem);
+  font-family: inherit;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@utility touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@utility field-base {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--ink);
+  padding: 0.75rem 0.9rem;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+@utility field-focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.field {
+  @apply field-base;
+}
+.field:focus {
+  @apply field-focus;
+}
+
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--surface-raised);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  min-height: 36px;
+}
+
+/* Fade a section in as the wizard advances — subtle, never in the way. */
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.step-enter {
+  animation: step-in 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-enter {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* The signature pad must not scroll the page while you're drawing on it. */
+.signature-pad {
+  touch-action: none;
+}
