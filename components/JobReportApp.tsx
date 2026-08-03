@@ -5,6 +5,7 @@ import { t, type UIKey } from "@/lib/i18n";
 import { downloadPdf, pdfBase64, pdfFileName } from "@/lib/pdf";
 import {
   clearDraft,
+  clearDraftIfUnchanged,
   detectBrowserLang,
   loadDraft,
   loadLang,
@@ -122,6 +123,7 @@ export function JobReportApp() {
         if (ok) {
           removeFromOutbox(item.id);
           rememberForNextTime(item.report);
+          clearDraftIfUnchanged(item.report);
         }
       }
       setOutbox(loadOutbox());
@@ -138,6 +140,7 @@ export function JobReportApp() {
     if (ok) {
       removeFromOutbox(item.id);
       rememberForNextTime(item.report);
+      clearDraftIfUnchanged(item.report);
       setOutbox(loadOutbox());
     }
     setResendingId(null);

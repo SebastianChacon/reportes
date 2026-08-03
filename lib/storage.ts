@@ -63,6 +63,33 @@ export function clearDraft(): void {
   }
 }
 
+/** Order-independent equality check, so key ordering differences from spreads/JSON round-trips don't matter. */
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  if (value && typeof value === "object") {
+    const keys = Object.keys(value as Record<string, unknown>).sort();
+    return `{${keys
+      .map((key) => `${JSON.stringify(key)}:${stableStringify((value as Record<string, unknown>)[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * Clears the draft only if it still matches `report` (ignoring `submittedAt`, which the live
+ * draft never carries). Used after a background/outbox retry succeeds: that retry doesn't touch
+ * the app's in-progress `report` state, so blindly clearing here could wipe out a *different*
+ * draft the user has since started (e.g. after "Start Over") instead of just the one that sent.
+ */
+export function clearDraftIfUnchanged(report: JobReport): void {
+  const current = loadDraft();
+  if (!current) return;
+  const strip = (r: JobReport) => stableStringify({ ...r, submittedAt: null });
+  if (strip(current) === strip(report)) {
+    clearDraft();
+  }
+}
+
 /* ---------- "same crew as last time" ---------- */
 
 export function loadLastCrew(): CrewEntry[] {
