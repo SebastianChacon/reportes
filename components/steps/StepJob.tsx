@@ -58,6 +58,7 @@ function ChipList({
               add();
             }
           }}
+          onBlur={add}
         />
         <Button type="button" onClick={add} aria-label={addLabel} className="shrink-0 !px-4">
           <IconPlus />
