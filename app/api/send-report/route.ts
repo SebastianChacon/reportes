@@ -133,10 +133,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const { report, lang, pdfBase64, fileName, photos = [] } = payload ?? {};
-  if (!report?.clientName || !report?.date || !pdfBase64) {
+  const { report: rawReport, lang, pdfBase64, fileName, photos = [] } = payload ?? {};
+  if (!rawReport?.clientName || !rawReport?.date || !pdfBase64) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
+
+  // Reports can sit in the client's draft/outbox localStorage across app updates, so a
+  // queued report may predate a schema change and be missing newer array fields entirely.
+  const arr = <T,>(v: T[] | undefined): T[] => (Array.isArray(v) ? v : []);
+  const report: JobReport = {
+    ...rawReport,
+    jobNumbers: arr(rawReport.jobNumbers),
+    truckNumbers: arr(rawReport.truckNumbers),
+    crew: arr(rawReport.crew),
+    materials: arr(rawReport.materials),
+    plants: arr(rawReport.plants),
+    equipment: arr(rawReport.equipment),
+    subcontractors: arr(rawReport.subcontractors),
+    trucks: arr(rawReport.trucks),
+    photos: arr(rawReport.photos),
+    description: rawReport.description ?? {
+      original: "",
+      originalLang: lang ?? "en",
+      translation: null,
+      translationLang: null,
+      unknownTerms: [],
+      showingTranslation: false,
+    },
+  };
   if (pdfBase64.length * 0.75 > MAX_PDF_BYTES) {
     return NextResponse.json({ error: "pdf_too_large" }, { status: 413 });
   }
