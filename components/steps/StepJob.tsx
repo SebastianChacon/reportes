@@ -2,6 +2,7 @@
 
 import React from "react";
 import { dayOfWeek, t } from "@/lib/i18n";
+import { loadLastJobInfo, type LastJobInfo } from "@/lib/storage";
 import type { JobReport, Lang } from "@/lib/types";
 import { Button, IconPlus, Section, TextField } from "../ui";
 
@@ -97,10 +98,35 @@ export function StepJob({
   update: (patch: Partial<JobReport>) => void;
 }) {
   const dateId = React.useId();
+  const [lastJob, setLastJob] = React.useState<LastJobInfo | null>(null);
+
+  React.useEffect(() => {
+    setLastJob(loadLastJobInfo());
+  }, []);
+
+  const useYesterdayJob = () => {
+    if (!lastJob) return;
+    update({
+      clientName: lastJob.clientName,
+      jobNumbers: lastJob.jobNumbers,
+      truckNumbers: lastJob.truckNumbers,
+    });
+  };
+
+  const canUseYesterday = Boolean(lastJob) && !report.clientName.trim() && report.jobNumbers.length === 0;
 
   return (
     <div className="space-y-4">
-      <Section title={t("stepJob", lang)}>
+      <Section
+        title={t("stepJob", lang)}
+        action={
+          canUseYesterday ? (
+            <Button variant="ghost" onClick={useYesterdayJob} className="!min-h-9 !px-2 !text-xs">
+              {t("useYesterdayJob", lang)}
+            </Button>
+          ) : undefined
+        }
+      >
         <div className="space-y-4">
           <div>
             <label htmlFor={dateId} className="mb-1.5 block text-sm font-medium">

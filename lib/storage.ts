@@ -3,6 +3,7 @@ import type { CrewEntry, JobReport, Lang } from "./types";
 const DRAFT_KEY = "btn.jobreport.draft";
 const LANG_KEY = "btn.jobreport.lang";
 const LAST_CREW_KEY = "btn.jobreport.lastCrew";
+const LAST_JOB_KEY = "btn.jobreport.lastJob";
 const OUTBOX_KEY = "btn.jobreport.outbox";
 
 function safeGet(key: string): string | null {
@@ -77,6 +78,24 @@ export function loadLastCrew(): CrewEntry[] {
 
 export function saveLastCrew(crew: CrewEntry[]): void {
   if (crew.length) safeSet(LAST_CREW_KEY, JSON.stringify(crew));
+}
+
+/* ---------- "same job info as last time" ---------- */
+
+export type LastJobInfo = { clientName: string; jobNumbers: string[]; truckNumbers: string[] };
+
+export function loadLastJobInfo(): LastJobInfo | null {
+  const raw = safeGet(LAST_JOB_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as LastJobInfo;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLastJobInfo(info: LastJobInfo): void {
+  if (info.clientName.trim()) safeSet(LAST_JOB_KEY, JSON.stringify(info));
 }
 
 /* ---------- outbox: reports finished with no signal ---------- */

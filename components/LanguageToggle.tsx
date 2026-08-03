@@ -47,7 +47,7 @@ export function LanguageToggle({
             onClick={() => onChange(code)}
             className={`min-h-9 min-w-11 rounded-full px-2.5 text-[13px] font-bold uppercase tracking-wide transition ${
               active
-                ? "bg-[color:var(--accent)] text-white"
+                ? "bg-[color:var(--accent)] text-[color:var(--accent-contrast)]"
                 : "text-[color:var(--ink-muted)]"
             }`}
           >

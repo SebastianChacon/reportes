@@ -11,7 +11,7 @@ const CONTENT_W = PAGE.w - M.left - M.right;
 const INK = { r: 24, g: 24, b: 27 };
 const MUTED = { r: 113, g: 113, b: 122 };
 const RULE = { r: 212, g: 212, b: 216 };
-const BRAND = { r: 22, g: 101, b: 52 };
+const BRAND = INK;
 
 type Ctx = { doc: jsPDF; y: number; lang: Lang; page: number };
 
@@ -159,15 +159,25 @@ export function buildPdf(r: JobReport, lang: Lang): jsPDF {
   footer(ctx);
 
   /* ---- Masthead ---- */
+  const markSize = 22;
+  const markY = ctx.y - 14;
+  doc.setFillColor(INK.r, INK.g, INK.b);
+  doc.roundedRect(M.left, markY, markSize, markSize, 3, 3, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text("BTN", M.left + markSize / 2, markY + markSize / 2 + 2.8, { align: "center" });
+
+  const textX = M.left + markSize + 10;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(17);
   doc.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-  doc.text("BACK TO NATURE", M.left, ctx.y + 6);
+  doc.text("BACK TO NATURE", textX, ctx.y + 6);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-  doc.text(t("subtitle", lang), M.left, ctx.y + 20);
+  doc.text(t("subtitle", lang), textX, ctx.y + 20);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);

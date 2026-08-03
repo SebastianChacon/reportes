@@ -8,14 +8,19 @@ import {
   detectBrowserLang,
   loadDraft,
   loadLang,
+  loadOutbox,
   queueReport,
+  removeFromOutbox,
   saveDraft,
   saveLang,
   saveLastCrew,
+  saveLastJobInfo,
+  type OutboxItem,
 } from "@/lib/storage";
 import { emptyReport, type JobReport, type Lang } from "@/lib/types";
 import { missingRequired } from "@/lib/calc";
 import { LanguageToggle } from "./LanguageToggle";
+import { OutboxPanel } from "./OutboxPanel";
 import { StepCrew } from "./steps/StepCrew";
 import { StepJob } from "./steps/StepJob";
 import { StepResources } from "./steps/StepResources";
@@ -28,6 +33,35 @@ const STEPS: UIKey[] = ["stepJob", "stepTimes", "stepCrew", "stepWork", "stepRes
 
 type SendStatus = "idle" | "sending" | "error";
 
+/** POST one report to the office. Shared by the main "Send" button and outbox retries. */
+async function sendReport(report: JobReport, lang: Lang): Promise<boolean> {
+  try {
+    const response = await fetch("/api/send-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        report,
+        lang,
+        pdfBase64: pdfBase64(report, lang),
+        fileName: pdfFileName(report),
+      }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Remember this crew/job for "same as last time" — regardless of whether the send happened live or on retry. */
+function rememberForNextTime(report: JobReport): void {
+  saveLastCrew(report.crew);
+  saveLastJobInfo({
+    clientName: report.clientName,
+    jobNumbers: report.jobNumbers,
+    truckNumbers: report.truckNumbers,
+  });
+}
+
 export function JobReportApp() {
   const [lang, setLang] = React.useState<Lang>("es");
   const [report, setReport] = React.useState<JobReport>(() => emptyReport("es"));
@@ -36,7 +70,13 @@ export function JobReportApp() {
   const [done, setDone] = React.useState(false);
   const [hydrated, setHydrated] = React.useState(false);
   const [confirmReset, setConfirmReset] = React.useState(false);
+  const [outbox, setOutbox] = React.useState<OutboxItem[]>([]);
+  const [outboxOpen, setOutboxOpen] = React.useState(false);
+  const [resendingId, setResendingId] = React.useState<string | null>(null);
+  const [online, setOnline] = React.useState(true);
   const mainRef = React.useRef<HTMLElement>(null);
+  const langRef = React.useRef(lang);
+  langRef.current = lang;
 
   /* ---- restore language + draft on first paint ---- */
   React.useEffect(() => {
@@ -54,6 +94,50 @@ export function JobReportApp() {
     if (!hydrated || done) return;
     saveDraft(report);
   }, [report, hydrated, done]);
+
+  /* ---- connectivity: visible from step 1, not just at review ---- */
+  React.useEffect(() => {
+    const sync = () => setOnline(navigator.onLine);
+    sync();
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, []);
+
+  /* ---- outbox: reports that failed to send earlier, retried when signal comes back ---- */
+  React.useEffect(() => {
+    if (!hydrated) return;
+    setOutbox(loadOutbox());
+
+    const flush = async () => {
+      for (const item of loadOutbox()) {
+        const ok = await sendReport(item.report, langRef.current);
+        if (ok) {
+          removeFromOutbox(item.id);
+          rememberForNextTime(item.report);
+        }
+      }
+      setOutbox(loadOutbox());
+    };
+
+    if (navigator.onLine) flush();
+    window.addEventListener("online", flush);
+    return () => window.removeEventListener("online", flush);
+  }, [hydrated]);
+
+  const retryOutboxItem = async (item: OutboxItem) => {
+    setResendingId(item.id);
+    const ok = await sendReport(item.report, lang);
+    if (ok) {
+      removeFromOutbox(item.id);
+      rememberForNextTime(item.report);
+      setOutbox(loadOutbox());
+    }
+    setResendingId(null);
+  };
 
   const changeLang = (next: Lang) => {
     setLang(next);
@@ -80,29 +164,18 @@ export function JobReportApp() {
     setStatus("sending");
 
     const submitted: JobReport = { ...report, submittedAt: new Date().toISOString() };
+    const ok = await sendReport(submitted, lang);
 
-    try {
-      const response = await fetch("/api/send-report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          report: submitted,
-          lang,
-          pdfBase64: pdfBase64(submitted, lang),
-          fileName: pdfFileName(submitted),
-        }),
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      saveLastCrew(submitted.crew);
+    if (ok) {
+      rememberForNextTime(submitted);
       clearDraft();
       setReport(submitted);
       setDone(true);
       setStatus("idle");
-    } catch {
+    } else {
       // Hold it on the device so a dead spot never costs a day's paperwork.
       queueReport(submitted);
+      setOutbox(loadOutbox());
       setStatus("error");
     }
   };
@@ -176,8 +249,27 @@ export function JobReportApp() {
             </p>
             <h1 className="truncate text-lg font-bold leading-tight">{t("appTitle", lang)}</h1>
           </div>
-          <LanguageToggle lang={lang} onChange={changeLang} />
+          <div className="flex shrink-0 items-center gap-2">
+            {outbox.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setOutboxOpen(true)}
+                className="chip font-semibold"
+              >
+                {outbox.length} {t("pendingCount", lang)}
+              </button>
+            )}
+            <LanguageToggle lang={lang} onChange={changeLang} />
+          </div>
         </div>
+
+        {!online && (
+          <div className="px-4 pb-2.5">
+            <p className="rounded-lg bg-[color:var(--accent-soft)] px-3 py-2 text-xs font-medium text-[color:var(--accent)]">
+              {t("offline", lang)}
+            </p>
+          </div>
+        )}
 
         {/* ---- Progress ---- */}
         <div className="px-4 pb-2.5">
@@ -279,6 +371,17 @@ export function JobReportApp() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ---- Pending reports ---- */}
+      {outboxOpen && (
+        <OutboxPanel
+          lang={lang}
+          items={outbox}
+          resendingId={resendingId}
+          onResend={retryOutboxItem}
+          onClose={() => setOutboxOpen(false)}
+        />
       )}
     </div>
   );
