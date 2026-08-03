@@ -83,10 +83,36 @@ function fieldRow(ctx: Ctx, items: { key: string; value: string }[]): void {
   ctx.y = maxY;
 }
 
+/** Row of bold-number cards — a scannable at-a-glance summary up top. */
+function statCards(ctx: Ctx, stats: { label: string; value: string }[]): void {
+  if (stats.length === 0) return;
+  const { doc } = ctx;
+  const gap = 8;
+  const boxH = 42;
+  const boxW = (CONTENT_W - gap * (stats.length - 1)) / stats.length;
+  ensure(ctx, boxH + 16);
+  const y = ctx.y;
+  stats.forEach((s, i) => {
+    const x = M.left + i * (boxW + gap);
+    doc.setFillColor(244, 244, 245);
+    doc.roundedRect(x, y, boxW, boxH, 5, 5, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(INK.r, INK.g, INK.b);
+    doc.text(s.value || "—", x + boxW / 2, y + 20, { align: "center", maxWidth: boxW - 8 });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
+    doc.text(s.label.toUpperCase(), x + boxW / 2, y + 32, { align: "center", maxWidth: boxW - 8 });
+  });
+  ctx.y = y + boxH + 18;
+}
+
 function table(ctx: Ctx, headers: string[], widths: number[], rows: string[][]): void {
   if (rows.length === 0) return;
   const { doc } = ctx;
   ensure(ctx, 30);
+  const rowH = 13.5;
 
   const drawHeader = () => {
     doc.setFont("helvetica", "bold");
@@ -113,7 +139,7 @@ function table(ctx: Ctx, headers: string[], widths: number[], rows: string[][]):
   doc.setFontSize(9);
   doc.setTextColor(INK.r, INK.g, INK.b);
 
-  for (const row of rows) {
+  rows.forEach((row, i) => {
     if (ctx.y + 14 > PAGE.h - M.bottom) {
       newPage(ctx);
       drawHeader();
@@ -121,17 +147,23 @@ function table(ctx: Ctx, headers: string[], widths: number[], rows: string[][]):
       doc.setFontSize(9);
       doc.setTextColor(INK.r, INK.g, INK.b);
     }
+    // Zebra striping — a dense form is easier to scan row by row.
+    if (i % 2 === 1) {
+      doc.setFillColor(250, 250, 250);
+      doc.rect(M.left - 4, ctx.y - 9.5, CONTENT_W + 8, rowH, "F");
+    }
     let x = M.left;
-    row.forEach((cell, i) => {
-      const alignRight = i > 0 && i >= row.length - 2;
-      doc.text(cell || "—", alignRight ? x + widths[i] - 4 : x, ctx.y, {
+    row.forEach((cell, j) => {
+      const alignRight = j > 0 && j >= row.length - 2;
+      doc.setTextColor(INK.r, INK.g, INK.b);
+      doc.text(cell || "—", alignRight ? x + widths[j] - 4 : x, ctx.y, {
         align: alignRight ? "right" : "left",
-        maxWidth: widths[i] - 6,
+        maxWidth: widths[j] - 6,
       });
-      x += widths[i];
+      x += widths[j];
     });
-    ctx.y += 13.5;
-  }
+    ctx.y += rowH;
+  });
   ctx.y += 2;
 }
 
@@ -200,6 +232,18 @@ export function buildPdf(r: JobReport, lang: Lang): jsPDF {
   doc.line(M.left, ctx.y, M.left + CONTENT_W, ctx.y);
   ctx.y += 16;
 
+  /* ---- At-a-glance summary ---- */
+  const materialsTotal = materialsTotalCost(r);
+  statCards(
+    ctx,
+    [
+      { label: t("totalHours", lang), value: formatHours(totalDayHours(r)) },
+      { label: t("onSiteHours", lang), value: formatHours(onSiteHours(r)) },
+      { label: t("stepCrew", lang), value: String(r.crew.length) },
+      materialsTotal > 0 ? { label: t("materialsTotal", lang), value: formatMoney(materialsTotal) } : null,
+    ].filter((x): x is { label: string; value: string } => x !== null)
+  );
+
   /* ---- Job ---- */
   fieldRow(ctx, [
     { key: t("date", lang), value: r.date },
@@ -263,24 +307,16 @@ export function buildPdf(r: JobReport, lang: Lang): jsPDF {
   }
 
   /* ---- Photos ---- */
+  // Photos travel as their own image attachments, not embedded here — keeps
+  // this PDF a compact one-pager and the photos full quality on their own.
   if (r.photos.length) {
-    sectionTitle(ctx, t("photos", lang));
-    const cols = 3;
-    const gap = 8;
-    const cellW = (CONTENT_W - gap * (cols - 1)) / cols;
-    const cellH = cellW * 0.75;
-    for (let i = 0; i < r.photos.length; i += cols) {
-      ensure(ctx, cellH + gap);
-      r.photos.slice(i, i + cols).forEach((src, j) => {
-        const x = M.left + j * (cellW + gap);
-        try {
-          doc.addImage(src, "JPEG", x, ctx.y, cellW, cellH);
-        } catch {
-          /* a malformed data URL should never lose the whole PDF */
-        }
-      });
-      ctx.y += cellH + gap;
-    }
+    paragraph(
+      ctx,
+      lang === "es"
+        ? `${r.photos.length} foto(s) adjunta(s) por separado.`
+        : `${r.photos.length} photo(s) attached separately.`,
+      { muted: true, italic: true }
+    );
   }
 
   /* ---- Equipment ---- */
@@ -365,13 +401,12 @@ export function buildPdf(r: JobReport, lang: Lang): jsPDF {
     if (r.disposals) field(ctx, t("disposals", lang), r.disposals);
   }
 
-  const total = materialsTotalCost(r);
-  if (total > 0) {
+  if (materialsTotal > 0) {
     ensure(ctx, 20);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(INK.r, INK.g, INK.b);
-    doc.text(`${t("materialsTotal", lang)}: ${formatMoney(total)}`, M.left + CONTENT_W, ctx.y, {
+    doc.text(`${t("materialsTotal", lang)}: ${formatMoney(materialsTotal)}`, M.left + CONTENT_W, ctx.y, {
       align: "right",
     });
     ctx.y += 16;
