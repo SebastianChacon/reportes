@@ -54,17 +54,37 @@ function summaryHtml(r: JobReport, lang: Lang): string {
     .join("");
 
   const total = materialsTotalCost(r);
+  const photoCount = r.photos?.length ?? 0;
+
+  const stat = (label: string, value: string) =>
+    `<td style="padding:4px" width="25%"><table style="border-collapse:collapse;width:100%;background:#f4f4f5;border-radius:10px" role="presentation"><tr><td style="padding:12px 8px;text-align:center">
+      <div style="font-size:18px;font-weight:800;color:#18181b;line-height:1.1">${escapeHtml(value)}</div>
+      <div style="margin-top:3px;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#71717a">${escapeHtml(
+        label
+      )}</div>
+    </td></tr></table></td>`;
+
+  const stats = [
+    stat("Total hrs", formatHours(totalDayHours(r))),
+    stat("On site", formatHours(onSiteHours(r))),
+    stat("Crew", String(r.crew.length)),
+    total > 0 ? stat("Materials", `$${total.toFixed(2)}`) : "",
+  ]
+    .filter(Boolean)
+    .join("");
 
   return `
-<div style="font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#18181b;max-width:640px;margin:0 auto;padding:24px">
+<div style="font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#18181b;background:#ffffff;max-width:640px;margin:0 auto;padding:24px">
   <table style="border-collapse:collapse;margin:0 0 4px"><tr>
     <td style="width:26px;height:26px;background:#111111;border-radius:5px;text-align:center;vertical-align:middle;font-size:8px;font-weight:800;letter-spacing:-.02em;color:#ffffff">BTN</td>
     <td style="padding-left:8px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#18181b">Back to Nature</td>
   </tr></table>
   <h1 style="margin:4px 0 2px;font-size:22px">Job Report — ${escapeHtml(r.clientName)}</h1>
-  <p style="margin:0 0 20px;color:#71717a;font-size:14px">${escapeHtml(r.date)} · ${escapeHtml(
+  <p style="margin:0 0 18px;color:#71717a;font-size:14px">${escapeHtml(r.date)} · ${escapeHtml(
     dayOfWeek(r.date, lang)
   )} · Job ${r.jobNumbers.map((n) => `#${escapeHtml(n)}`).join(", ") || "—"}</p>
+
+  <table style="border-collapse:collapse;width:100%;margin-bottom:16px" role="presentation"><tr>${stats}</tr></table>
 
   <table style="border-collapse:collapse;width:100%;margin-bottom:20px">
     ${row("Client", r.clientName)}
@@ -72,10 +92,6 @@ function summaryHtml(r: JobReport, lang: Lang): string {
     ${row("Truck #", r.truckNumbers.join(", "))}
     ${row("Yard → Job", `${r.startYard || "—"} → ${r.startJob || "—"}`)}
     ${row("Job → Yard", `${r.endJob || "—"} → ${r.endYard || "—"}`)}
-    ${row("Total hours", formatHours(totalDayHours(r)))}
-    ${row("On site", formatHours(onSiteHours(r)))}
-    ${row("Crew hours", `${formatHours(crewTotalHours(r))} (${r.crew.length} people)`)}
-    ${total > 0 ? row("Materials cost", `$${total.toFixed(2)}`) : ""}
   </table>
 
   <h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#18181b;border-bottom:1px solid #18181b;padding-bottom:4px">Description</h2>
@@ -99,14 +115,23 @@ function summaryHtml(r: JobReport, lang: Lang): string {
       : ""
   }
   ${r.notes ? `<p style="font-size:14px;margin-top:20px"><strong>Notes:</strong> ${escapeHtml(r.notes)}</p>` : ""}
-  ${
-    r.photos?.length
-      ? `<p style="font-size:14px;margin-top:10px"><strong>${r.photos.length}</strong> photo(s) attached.</p>`
-      : ""
-  }
 
-  <p style="margin-top:28px;font-size:12px;color:#a1a1aa;border-top:1px solid #e4e4e7;padding-top:12px">
-    Full report attached as PDF. Submitted ${escapeHtml(
+  <table style="border-collapse:collapse;width:100%;margin-top:28px;border-top:1px solid #e4e4e7" role="presentation">
+    <tr>
+      <td style="padding-top:14px;font-size:12px;color:#71717a;vertical-align:top">
+        📄 <strong style="color:#18181b">Full report</strong> — attached as a one-page PDF.
+      </td>
+      <td style="padding-top:14px;font-size:12px;color:#71717a;vertical-align:top;text-align:right">
+        ${
+          photoCount > 0
+            ? `📷 <strong style="color:#18181b">${photoCount} photo(s)</strong> — attached separately as images.`
+            : "No photos attached."
+        }
+      </td>
+    </tr>
+  </table>
+  <p style="margin-top:10px;font-size:11px;color:#a1a1aa">
+    Submitted ${escapeHtml(
       r.submittedAt ? new Date(r.submittedAt).toLocaleString() : ""
     )} from the mobile job report app.
   </p>
