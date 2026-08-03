@@ -89,6 +89,7 @@ export const UI = {
     en: "Before / after shots help the office a lot",
     es: "Fotos de antes / después ayudan mucho a la oficina",
   },
+  processingPhotos: { en: "Processing…", es: "Procesando…" },
 
   // Step 5 — resources
   equipment: { en: "Equipment", es: "Equipo" },

@@ -3,6 +3,7 @@
 import { t } from "@/lib/i18n";
 import type { JobReport, Lang } from "@/lib/types";
 import { DescriptionField } from "../DescriptionField";
+import { PhotosField } from "../PhotosField";
 import { Section, TextArea } from "../ui";
 
 export function StepWork({
@@ -22,6 +23,10 @@ export function StepWork({
           value={report.description}
           onChange={(description) => update({ description })}
         />
+      </Section>
+
+      <Section title={t("photos", lang)} hint={t("photosHint", lang)}>
+        <PhotosField lang={lang} value={report.photos} onChange={(photos) => update({ photos })} />
       </Section>
 
       <Section title={t("notes", lang)} hint={t("optional", lang)}>

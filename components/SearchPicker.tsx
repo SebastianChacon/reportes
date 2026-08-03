@@ -16,8 +16,8 @@ export type PickerOption = {
 
 /**
  * The paper form prints 200+ rows and the foreman ticks five of them.
- * On a phone that has to become search-and-add: nothing is rendered until
- * you type, and already-picked rows drop out of the results.
+ * Everything not already picked is listed (scrollable) so someone who
+ * forgot the exact name can browse for it; typing narrows that same list.
  */
 export function SearchPicker({
   placeholder,
@@ -27,7 +27,6 @@ export function SearchPicker({
   onAddCustom,
   addCustomLabel,
   noResultsLabel,
-  maxVisible = 8,
 }: {
   placeholder: string;
   options: PickerOption[];
@@ -37,23 +36,19 @@ export function SearchPicker({
   onAddCustom?: (text: string) => void;
   addCustomLabel?: string;
   noResultsLabel: string;
-  maxVisible?: number;
 }) {
   const [query, setQuery] = React.useState("");
   const selected = React.useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const normalized = normalize(query);
 
-  // Nothing is listed until the foreman types. A default dump of 8 rows would
-  // push the "already added" list — the thing they actually need to see —
-  // off the bottom of a phone screen.
   const matches = React.useMemo(() => {
-    if (!normalized) return [];
-    return options
-      .filter((o) => !selected.has(o.id))
-      .filter((o) => normalize(`${o.title} ${o.subtitle ?? ""} ${o.keywords ?? ""}`).includes(normalized))
-      .slice(0, maxVisible);
-  }, [options, selected, normalized, maxVisible]);
+    const available = options.filter((o) => !selected.has(o.id));
+    if (!normalized) return available;
+    return available.filter((o) =>
+      normalize(`${o.title} ${o.subtitle ?? ""} ${o.keywords ?? ""}`).includes(normalized)
+    );
+  }, [options, selected, normalized]);
 
   const exactMatch = matches.some((m) => normalize(m.title) === normalized);
   const canAddCustom = Boolean(onAddCustom) && normalized.length > 1 && !exactMatch;
@@ -93,7 +88,7 @@ export function SearchPicker({
       </div>
 
       {(matches.length > 0 || canAddCustom || normalized.length > 0) && (
-        <ul className="mt-2 overflow-hidden rounded-xl border border-[color:var(--line)]">
+        <ul className="mt-2 max-h-80 overflow-y-auto overscroll-contain rounded-xl border border-[color:var(--line)]">
           {matches.map((opt, i) => (
             <li key={opt.id}>
               <button

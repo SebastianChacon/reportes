@@ -9,12 +9,16 @@ export const maxDuration = 60;
 
 /** Signatures are PNGs, so payloads are chunky — but not unbounded. */
 const MAX_PDF_BYTES = 8 * 1024 * 1024;
+/** Photos are downscaled client-side, but a dozen of them still add up. */
+const MAX_PHOTOS_BYTES = 20 * 1024 * 1024;
 
 type Payload = {
   report: JobReport;
   lang: Lang;
   pdfBase64: string;
   fileName: string;
+  /** base64 JPEGs, prefix already stripped client-side. */
+  photos?: string[];
 };
 
 function escapeHtml(s: string): string {
@@ -95,6 +99,11 @@ function summaryHtml(r: JobReport, lang: Lang): string {
       : ""
   }
   ${r.notes ? `<p style="font-size:14px;margin-top:20px"><strong>Notes:</strong> ${escapeHtml(r.notes)}</p>` : ""}
+  ${
+    r.photos?.length
+      ? `<p style="font-size:14px;margin-top:10px"><strong>${r.photos.length}</strong> photo(s) attached.</p>`
+      : ""
+  }
 
   <p style="margin-top:28px;font-size:12px;color:#a1a1aa;border-top:1px solid #e4e4e7;padding-top:12px">
     Full report attached as PDF. Submitted ${escapeHtml(
@@ -124,12 +133,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const { report, lang, pdfBase64, fileName } = payload ?? {};
+  const { report, lang, pdfBase64, fileName, photos = [] } = payload ?? {};
   if (!report?.clientName || !report?.date || !pdfBase64) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
   if (pdfBase64.length * 0.75 > MAX_PDF_BYTES) {
     return NextResponse.json({ error: "pdf_too_large" }, { status: 413 });
+  }
+  const photosBytes = photos.reduce((sum, p) => sum + p.length * 0.75, 0);
+  if (photosBytes > MAX_PHOTOS_BYTES) {
+    return NextResponse.json({ error: "photos_too_large" }, { status: 413 });
   }
 
   const subject = `Job Report — ${report.clientName} — ${report.date}${
@@ -144,7 +157,10 @@ export async function POST(request: Request) {
       to: to.split(",").map((address) => address.trim()).filter(Boolean),
       subject,
       html: summaryHtml(report, lang ?? "en"),
-      attachments: [{ filename: fileName || "job-report.pdf", content: pdfBase64 }],
+      attachments: [
+        { filename: fileName || "job-report.pdf", content: pdfBase64 },
+        ...photos.map((content, i) => ({ filename: `photo-${i + 1}.jpg`, content })),
+      ],
     });
 
     if (error) {

@@ -262,6 +262,27 @@ export function buildPdf(r: JobReport, lang: Lang): jsPDF {
     );
   }
 
+  /* ---- Photos ---- */
+  if (r.photos.length) {
+    sectionTitle(ctx, t("photos", lang));
+    const cols = 3;
+    const gap = 8;
+    const cellW = (CONTENT_W - gap * (cols - 1)) / cols;
+    const cellH = cellW * 0.75;
+    for (let i = 0; i < r.photos.length; i += cols) {
+      ensure(ctx, cellH + gap);
+      r.photos.slice(i, i + cols).forEach((src, j) => {
+        const x = M.left + j * (cellW + gap);
+        try {
+          doc.addImage(src, "JPEG", x, ctx.y, cellW, cellH);
+        } catch {
+          /* a malformed data URL should never lose the whole PDF */
+        }
+      });
+      ctx.y += cellH + gap;
+    }
+  }
+
   /* ---- Equipment ---- */
   if (r.equipment.length) {
     sectionTitle(ctx, t("equipment", lang));

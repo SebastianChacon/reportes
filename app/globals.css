@@ -47,11 +47,29 @@ button {
  * ourselves. iOS's "Larger Accessibility Sizes" setting scales `rem`
  * site-wide, which — combined with the max(16px, 1rem) rule above —
  * can blow the native control past our field width and out of the
- * card. Pin these to a fixed size so the OS widget always fits.
+ * card. Pin these to a fixed size so the OS widget always fits, and
+ * force the control itself to respect the field's box instead of
+ * growing past it (min-width: 0 lets it shrink inside a grid track;
+ * the calendar icon is capped separately since it scales on its own).
  */
 input[type="date"],
 input[type="time"] {
   font-size: 16px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit {
+  overflow: hidden;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  flex-shrink: 0;
+  padding: 0;
+  margin-left: 6px;
 }
 
 input[type="number"]::-webkit-outer-spin-button,
