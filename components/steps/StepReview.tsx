@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { ROLE_CODES } from "@/lib/catalog";
 import {
   crewTotalHours,
@@ -48,18 +47,6 @@ export function StepReview({
   const missing = missingRequired(report);
   const warns = warnings(report);
   const total = materialsTotalCost(report);
-  const [online, setOnline] = React.useState(true);
-
-  React.useEffect(() => {
-    const sync = () => setOnline(navigator.onLine);
-    sync();
-    window.addEventListener("online", sync);
-    window.addEventListener("offline", sync);
-    return () => {
-      window.removeEventListener("online", sync);
-      window.removeEventListener("offline", sync);
-    };
-  }, []);
 
   const missingLabel = (key: string) => {
     const map: Record<string, UIKey> = {
@@ -100,12 +87,6 @@ export function StepReview({
             </li>
           ))}
         </ul>
-      )}
-
-      {!online && (
-        <p className="rounded-lg bg-[color:var(--accent-soft)] px-3 py-2.5 text-sm font-medium text-[color:var(--accent)]">
-          {t("offline", lang)}
-        </p>
       )}
 
       <Section

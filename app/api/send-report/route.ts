@@ -53,7 +53,10 @@ function summaryHtml(r: JobReport, lang: Lang): string {
 
   return `
 <div style="font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#18181b;max-width:640px;margin:0 auto;padding:24px">
-  <p style="margin:0;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#15803d">Back to Nature</p>
+  <table style="border-collapse:collapse;margin:0 0 4px"><tr>
+    <td style="width:26px;height:26px;background:#111111;border-radius:5px;text-align:center;vertical-align:middle;font-size:8px;font-weight:800;letter-spacing:-.02em;color:#ffffff">BTN</td>
+    <td style="padding-left:8px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#18181b">Back to Nature</td>
+  </tr></table>
   <h1 style="margin:4px 0 2px;font-size:22px">Job Report — ${escapeHtml(r.clientName)}</h1>
   <p style="margin:0 0 20px;color:#71717a;font-size:14px">${escapeHtml(r.date)} · ${escapeHtml(
     dayOfWeek(r.date, lang)
@@ -71,7 +74,7 @@ function summaryHtml(r: JobReport, lang: Lang): string {
     ${total > 0 ? row("Materials cost", `$${total.toFixed(2)}`) : ""}
   </table>
 
-  <h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#15803d;border-bottom:1px solid #15803d;padding-bottom:4px">Description</h2>
+  <h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#18181b;border-bottom:1px solid #18181b;padding-bottom:4px">Description</h2>
   <p style="font-size:15px;line-height:1.6;white-space:pre-wrap">${escapeHtml(r.description.original)}</p>
   ${
     r.description.translation
@@ -83,12 +86,12 @@ function summaryHtml(r: JobReport, lang: Lang): string {
 
   ${
     crewRows
-      ? `<h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#15803d;border-bottom:1px solid #15803d;padding-bottom:4px;margin-top:24px">Crew</h2><ul style="font-size:14px;padding-left:18px;margin:8px 0">${crewRows}</ul>`
+      ? `<h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#18181b;border-bottom:1px solid #18181b;padding-bottom:4px;margin-top:24px">Crew</h2><ul style="font-size:14px;padding-left:18px;margin:8px 0">${crewRows}</ul>`
       : ""
   }
   ${
     materialsRows
-      ? `<h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#15803d;border-bottom:1px solid #15803d;padding-bottom:4px;margin-top:24px">Materials</h2><ul style="font-size:14px;padding-left:18px;margin:8px 0">${materialsRows}</ul>`
+      ? `<h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#18181b;border-bottom:1px solid #18181b;padding-bottom:4px;margin-top:24px">Materials</h2><ul style="font-size:14px;padding-left:18px;margin:8px 0">${materialsRows}</ul>`
       : ""
   }
   ${r.notes ? `<p style="font-size:14px;margin-top:20px"><strong>Notes:</strong> ${escapeHtml(r.notes)}</p>` : ""}

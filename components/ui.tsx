@@ -175,7 +175,7 @@ export function Button({ variant = "secondary", full, className = "", ...rest }:
   const base =
     "touch-target inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] font-semibold transition active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100";
   const styles: Record<string, string> = {
-    primary: "bg-[color:var(--accent)] text-white shadow-sm hover:brightness-110",
+    primary: "bg-[color:var(--accent)] text-[color:var(--accent-contrast)] shadow-sm hover:brightness-110",
     secondary: "border-[1.5px] border-[color:var(--line)] bg-[color:var(--surface-raised)]",
     ghost: "text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]",
     danger: "border-[1.5px] border-[color:var(--color-clay-600)] text-[color:var(--color-clay-600)]",
@@ -254,7 +254,7 @@ export function Toggle<T extends string>({
             onClick={() => onChange(opt.value)}
             className={`min-h-11 px-3 text-sm font-semibold transition ${
               active
-                ? "bg-[color:var(--accent)] text-white"
+                ? "bg-[color:var(--accent)] text-[color:var(--accent-contrast)]"
                 : "bg-transparent text-[color:var(--ink-muted)]"
             }`}
           >

@@ -45,7 +45,7 @@ function Accordion({
         <span className="flex items-center gap-2.5">
           <span className="text-[15px] font-bold tracking-tight">{title}</span>
           {count > 0 && (
-            <span className="rounded-full bg-[color:var(--accent)] px-2 py-0.5 text-xs font-bold tabular-nums text-white">
+            <span className="rounded-full bg-[color:var(--accent)] px-2 py-0.5 text-xs font-bold tabular-nums text-[color:var(--accent-contrast)]">
               {count}
             </span>
           )}
@@ -385,7 +385,7 @@ export function StepResources({
                         aria-pressed={p.category === cat.id}
                         className={`min-h-9 rounded-full border-[1.5px] px-3 text-xs font-semibold transition ${
                           p.category === cat.id
-                            ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white"
+                            ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-[color:var(--accent-contrast)]"
                             : "border-[color:var(--line)] text-[color:var(--ink-muted)]"
                         }`}
                       >
@@ -524,7 +524,7 @@ export function StepResources({
                     aria-hidden="true"
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-[1.5px] transition ${
                       picked
-                        ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white"
+                        ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-[color:var(--accent-contrast)]"
                         : "border-[color:var(--line)]"
                     }`}
                   >

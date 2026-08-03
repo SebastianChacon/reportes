@@ -35,6 +35,7 @@ export const UI = {
   truckNumberPlaceholder: { en: "e.g. 28", es: "ej. 28" },
   add: { en: "Add", es: "Agregar" },
   remove: { en: "Remove", es: "Quitar" },
+  useYesterdayJob: { en: "Same job info as last report", es: "Mismos datos que el último reporte" },
 
   // Step 2 — times
   startYard: { en: "Left the yard", es: "Salida del patio" },
@@ -150,6 +151,19 @@ export const UI = {
   },
   retry: { en: "Try again", es: "Intentar de nuevo" },
   offline: { en: "No connection — your report is saved on this phone", es: "Sin conexión — tu reporte está guardado en este teléfono" },
+
+  // Outbox — reports that failed to send and are queued on the device
+  pendingReports: { en: "Pending reports", es: "Reportes pendientes" },
+  pendingCount: { en: "pending", es: "pendientes" },
+  pendingEmpty: { en: "Nothing pending", es: "Nada pendiente" },
+  pendingHint: {
+    en: "Saved on this phone — resend when you have signal.",
+    es: "Guardados en este teléfono — reenvíalos cuando tengas señal.",
+  },
+  resend: { en: "Resend", es: "Reenviar" },
+  resent: { en: "Sent", es: "Enviado" },
+  queuedAt: { en: "Queued", es: "En cola" },
+  close: { en: "Close", es: "Cerrar" },
 
   // Validation
   required: { en: "Required", es: "Obligatorio" },
