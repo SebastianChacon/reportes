@@ -57,6 +57,18 @@ button {
   font-family: inherit;
 }
 
+/*
+ * date/time inputs render as a native OS control, not text we lay out
+ * ourselves. iOS's "Larger Accessibility Sizes" setting scales `rem`
+ * site-wide, which — combined with the max(16px, 1rem) rule above —
+ * can blow the native control past our field width and out of the
+ * card. Pin these to a fixed size so the OS widget always fits.
+ */
+input[type="date"],
+input[type="time"] {
+  font-size: 16px;
+}
+
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
