@@ -18,21 +18,6 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --surface: #121212;
-    --surface-sunk: #0a0a0a;
-    --surface-raised: #1c1c1c;
-    --ink: #f2f2f2;
-    --ink-muted: #9e9e9e;
-    --line: #303030;
-    --accent: #f2f2f2;
-    --accent-soft: #262626;
-    --accent-contrast: #121212;
-    color-scheme: dark;
-  }
-}
-
 html {
   /* Never let a wide table push the whole page sideways on a phone. */
   overflow-x: hidden;

@@ -12,10 +12,8 @@ export const viewport: Viewport = {
   // The form is dense; pinch-zoom must stay available.
   maximumScale: 5,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f4f4" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
+  // Always light: the app stays white even when the OS/browser is in dark mode.
+  themeColor: "#f4f4f4",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
