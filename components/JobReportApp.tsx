@@ -19,6 +19,7 @@ import {
 } from "@/lib/storage";
 import { emptyReport, type JobReport, type Lang } from "@/lib/types";
 import { missingRequired } from "@/lib/calc";
+import { stripDataUrlPrefix } from "@/lib/photos";
 import { LanguageToggle } from "./LanguageToggle";
 import { OutboxPanel } from "./OutboxPanel";
 import { StepCrew } from "./steps/StepCrew";
@@ -27,7 +28,7 @@ import { StepResources } from "./steps/StepResources";
 import { StepReview } from "./steps/StepReview";
 import { StepTimes } from "./steps/StepTimes";
 import { StepWork } from "./steps/StepWork";
-import { Button } from "./ui";
+import { Button, IconArrowLeft } from "./ui";
 
 const STEPS: UIKey[] = ["stepJob", "stepTimes", "stepCrew", "stepWork", "stepResources", "stepReview"];
 
@@ -44,6 +45,7 @@ async function sendReport(report: JobReport, lang: Lang): Promise<boolean> {
         lang,
         pdfBase64: pdfBase64(report, lang),
         fileName: pdfFileName(report),
+        photos: (report.photos ?? []).map(stripDataUrlPrefix),
       }),
     });
     return response.ok;
@@ -84,8 +86,10 @@ export function JobReportApp() {
     setLang(storedLang);
     document.documentElement.lang = storedLang;
 
+    // Merge onto a fresh report so fields added after a draft was saved
+    // (like `photos`) don't come back `undefined` and crash the UI.
     const draft = loadDraft();
-    setReport(draft ?? emptyReport(storedLang));
+    setReport(draft ? { ...emptyReport(storedLang), ...draft } : emptyReport(storedLang));
     setHydrated(true);
   }, []);
 
@@ -242,8 +246,18 @@ export function JobReportApp() {
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col">
       {/* ---- Header ---- */}
       <header className="sticky top-0 z-20 border-b border-[color:var(--line)] bg-[color:var(--surface)]/95 backdrop-blur">
-        <div className="flex items-center justify-between gap-3 px-4 pb-2.5 pt-3">
-          <div className="min-w-0">
+        <div className="flex items-center gap-2 px-4 pb-2.5 pt-3">
+          {step > 0 && (
+            <button
+              type="button"
+              aria-label={t("back", lang)}
+              onClick={() => goTo(step - 1)}
+              className="-ml-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[color:var(--ink)] transition active:bg-[color:var(--accent-soft)]"
+            >
+              <IconArrowLeft />
+            </button>
+          )}
+          <div className="min-w-0 flex-1">
             <p className="truncate text-[11px] font-bold uppercase tracking-widest text-[color:var(--accent)]">
               {t("company", lang)}
             </p>

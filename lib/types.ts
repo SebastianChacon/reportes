@@ -102,6 +102,8 @@ export type JobReport = {
 
   crew: CrewEntry[];
   description: Description;
+  /** data-URL JPEGs, downscaled client-side before they ever hit state. */
+  photos: string[];
   equipment: EquipmentEntry[];
   materials: MaterialEntry[];
   plants: PlantEntry[];
@@ -150,6 +152,7 @@ export function emptyReport(lang: Lang): JobReport {
     endYard: "",
     crew: [],
     description: emptyDescription(lang),
+    photos: [],
     equipment: [],
     materials: [],
     plants: [],

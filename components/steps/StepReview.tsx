@@ -177,6 +177,19 @@ export function StepReview({
         {report.notes && (
           <p className="mt-3 border-t border-[color:var(--line)] pt-3 text-sm">{report.notes}</p>
         )}
+        {report.photos.length > 0 && (
+          <div className="mt-3 grid grid-cols-4 gap-1.5 border-t border-[color:var(--line)] pt-3">
+            {report.photos.map((src, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={src}
+                alt=""
+                className="aspect-square w-full rounded-lg object-cover"
+              />
+            ))}
+          </div>
+        )}
       </Section>
 
       {(report.equipment.length > 0 ||
