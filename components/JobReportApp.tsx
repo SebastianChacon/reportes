@@ -22,6 +22,7 @@ import {
 import { emptyReport, type JobReport, type Lang } from "@/lib/types";
 import { missingRequired } from "@/lib/calc";
 import { stripDataUrlPrefix } from "@/lib/photos";
+import { mailtoUrl, REPORT_TO, shareReport } from "@/lib/share";
 import { LanguageToggle } from "./LanguageToggle";
 import { OutboxPanel } from "./OutboxPanel";
 import { StepCrew } from "./steps/StepCrew";
@@ -224,36 +225,38 @@ export function JobReportApp() {
     downloadPdf({ ...report, submittedAt: report.submittedAt ?? new Date().toISOString() }, lang);
   };
 
-  const handleSend = async () => {
+  /**
+   * Hands the PDF and photos to the phone's share sheet, so the report goes out
+   * from the foreman's own Gmail/Mail/WhatsApp. No API key, no verified domain,
+   * nothing to configure — which is why this is the primary path.
+   *
+   * Deliberately NOT async before `shareReport`: iOS Safari revokes the user
+   * activation that `navigator.share` needs the moment anything is awaited.
+   */
+  const handleSend = () => {
     if (missingRequired(report).length > 0) return;
     if (status === "sending") return;
-    setStatus("sending");
     setFailure(null);
 
     const submitted: JobReport = { ...report, submittedAt: new Date().toISOString() };
-    const result = await sendReport(submitted, lang);
 
-    if (result.ok) {
-      rememberForNextTime(submitted);
-      clearDraft();
-      setReport(submitted);
-      setDone(true);
-      setStatus("idle");
-      return;
-    }
-
-    // Hold it on the device so a dead spot never costs a day's paperwork — but
-    // only when a retry could actually succeed, and only if the write landed.
-    if (result.permanent) {
-      setFailure(result);
-    } else if (queueReport(submitted)) {
-      setOutbox(loadOutbox());
-      setFailure(result);
-    } else {
-      setFailure({ ...result, reason: "queue_full" });
-    }
-    setStatus("error");
+    shareReport(submitted, lang)
+      .then((outcome) => {
+        if (outcome === "cancelled") return;
+        if (outcome === "unsupported") {
+          // Desktop, or a browser without file sharing: download the PDF and
+          // open the mail client with the recipient and summary prefilled.
+          downloadPdf(submitted, lang);
+          window.location.href = mailtoUrl(submitted, lang);
+        }
+        rememberForNextTime(submitted);
+        clearDraft();
+        setReport(submitted);
+        setDone(true);
+      })
+      .catch(() => setFailure({ ok: false, permanent: false, reason: "network" }));
   };
+
 
   const startNew = () => {
     clearDraft();

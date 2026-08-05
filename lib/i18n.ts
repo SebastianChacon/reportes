@@ -146,11 +146,15 @@ export const UI = {
   clear: { en: "Clear", es: "Borrar" },
   send: { en: "Send report", es: "Enviar reporte" },
   sending: { en: "Sending…", es: "Enviando…" },
+  sendShareHint: {
+    en: "Opens your phone's share menu — pick Gmail, Mail or WhatsApp and send it to {to}. The PDF and the photos go attached.",
+    es: "Abre el menú de compartir del teléfono — elige Gmail, Mail o WhatsApp y mándalo a {to}. El PDF y las fotos van adjuntos.",
+  },
   downloadPdf: { en: "Download PDF", es: "Descargar PDF" },
   sent: { en: "Report sent", es: "Reporte enviado" },
   sentBody: {
-    en: "The office has it. You can start a new report.",
-    es: "La oficina ya lo tiene. Puedes empezar un reporte nuevo.",
+    en: "Make sure it went out from your mail app. You can start a new report.",
+    es: "Confirma que salió desde tu app de correo. Puedes empezar un reporte nuevo.",
   },
   newReport: { en: "New report", es: "Reporte nuevo" },
   sendFailed: {
