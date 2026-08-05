@@ -12,6 +12,7 @@ import {
   warnings,
 } from "@/lib/calc";
 import { dayOfWeek, t, UI, type UIKey } from "@/lib/i18n";
+import { REPORT_TO as shareTo } from "@/lib/share";
 import type { JobReport, Lang } from "@/lib/types";
 import { SignaturePad } from "../SignaturePad";
 import { Button, Section } from "../ui";
@@ -305,6 +306,9 @@ export function StepReview({
         >
           {status === "sending" ? t("sending", lang) : t("send", lang)}
         </Button>
+        <p className="text-center text-xs text-[color:var(--ink-muted)]">
+          {t("sendShareHint", lang).replace("{to}", shareTo)}
+        </p>
         <Button full onClick={onDownload} disabled={missing.length > 0}>
           {t("downloadPdf", lang)}
         </Button>
