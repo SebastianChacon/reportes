@@ -57,7 +57,17 @@ export function SignaturePad({
 
   React.useEffect(() => {
     setupCanvas();
-    const onResize = () => setupCanvas();
+    // Mobile browsers fire `resize` on every scroll (URL bar collapsing) and
+    // whenever the keyboard opens. Re-running setup then would snapshot and
+    // asynchronously redraw the signature — flickering, and losing an in-flight
+    // stroke. Only the width actually matters here.
+    let lastWidth = canvasRef.current?.getBoundingClientRect().width ?? 0;
+    const onResize = () => {
+      const width = canvasRef.current?.getBoundingClientRect().width ?? 0;
+      if (width === lastWidth || drawing.current) return;
+      lastWidth = width;
+      setupCanvas();
+    };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
     // Re-running on every `value` change would wipe strokes mid-signature.

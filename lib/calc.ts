@@ -2,6 +2,9 @@ import type { JobReport } from "./types";
 
 /** "HH:MM" → minutes since midnight, or null. */
 export function toMinutes(hhmm: string): number | null {
+  // Reports replayed from an outbox written by an older app version can be
+  // missing time fields entirely; an absent time is simply "no time", not a crash.
+  if (typeof hhmm !== "string") return null;
   const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
   if (!m) return null;
   const h = Number(m[1]);

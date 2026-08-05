@@ -14,11 +14,14 @@ function safeGet(key: string): string | null {
   }
 }
 
-function safeSet(key: string, value: string): void {
+/** Returns false when the write was rejected (private mode, or quota exhausted). */
+function safeSet(key: string, value: string): boolean {
   try {
     window.localStorage.setItem(key, value);
+    return true;
   } catch {
     /* private mode / quota — the app still works, it just won't survive a reload */
+    return false;
   }
 }
 
@@ -51,8 +54,19 @@ export function loadDraft(): JobReport | null {
   }
 }
 
-export function saveDraft(report: JobReport): void {
-  safeSet(DRAFT_KEY, JSON.stringify(report));
+export type SaveResult = "ok" | "ok-without-photos" | "failed";
+
+/**
+ * A dozen 1600px JPEGs as data URLs run well past the ~5MB localStorage budget.
+ * Rather than let the whole draft silently stop autosaving from that point on,
+ * fall back to saving everything except the photos and say so.
+ */
+export function saveDraft(report: JobReport): SaveResult {
+  if (safeSet(DRAFT_KEY, JSON.stringify(report))) return "ok";
+  if (report.photos.length > 0 && safeSet(DRAFT_KEY, JSON.stringify({ ...report, photos: [] }))) {
+    return "ok-without-photos";
+  }
+  return "failed";
 }
 
 export function clearDraft(): void {
@@ -140,14 +154,23 @@ export function loadOutbox(): OutboxItem[] {
   }
 }
 
-export function queueReport(report: JobReport): void {
-  const outbox = loadOutbox();
-  outbox.push({
+/**
+ * Returns false when the report could NOT be persisted — the caller must then
+ * tell the foreman to download the PDF instead of promising "it's on your phone".
+ */
+export function queueReport(report: JobReport): boolean {
+  const item: OutboxItem = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     report,
     queuedAt: new Date().toISOString(),
-  });
-  safeSet(OUTBOX_KEY, JSON.stringify(outbox));
+  };
+  const outbox = loadOutbox();
+  if (safeSet(OUTBOX_KEY, JSON.stringify([...outbox, item]))) return true;
+
+  // Out of room. The photos are the bulk of it and the PDF already carries the
+  // report itself, so a queued report without photos beats no report at all.
+  const lean: OutboxItem = { ...item, report: { ...report, photos: [] } };
+  return safeSet(OUTBOX_KEY, JSON.stringify([...outbox, lean]));
 }
 
 export function removeFromOutbox(id: string): void {
