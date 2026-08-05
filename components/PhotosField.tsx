@@ -4,7 +4,10 @@ import React from "react";
 import { t } from "@/lib/i18n";
 import { readPhotoAsDataUrl } from "@/lib/photos";
 import type { Lang } from "@/lib/types";
-import { Button, IconPlus, IconTrash } from "./ui";
+import { Button, IconCamera, IconImage, IconTrash } from "./ui";
+
+/** Enough for a before/after walkthrough; past this the payload stops being emailable. */
+const MAX_PHOTOS = 12;
 
 export function PhotosField({
   lang,
@@ -15,15 +18,29 @@ export function PhotosField({
   value: string[];
   onChange: (next: string[]) => void;
 }) {
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const galleryRef = React.useRef<HTMLInputElement>(null);
+  const cameraRef = React.useRef<HTMLInputElement>(null);
   const [busy, setBusy] = React.useState(false);
+  const [failed, setFailed] = React.useState(0);
+
+  const full = value.length >= MAX_PHOTOS;
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setBusy(true);
+    setFailed(0);
     try {
-      const added = await Promise.all(Array.from(files).map(readPhotoAsDataUrl));
-      onChange([...value, ...added]);
+      const room = MAX_PHOTOS - value.length;
+      const picked = Array.from(files).slice(0, Math.max(0, room));
+      // One unreadable file (HEIC on some Android browsers, a corrupt download)
+      // must not throw away the photos that decoded fine alongside it.
+      const results = await Promise.allSettled(picked.map(readPhotoAsDataUrl));
+      const added = results
+        .filter((r): r is PromiseFulfilledResult<string> => r.status === "fulfilled")
+        .map((r) => r.value);
+      const rejected = results.length - added.length + (files.length - picked.length);
+      if (added.length > 0) onChange([...value, ...added]);
+      setFailed(rejected);
     } finally {
       setBusy(false);
     }
@@ -31,20 +48,24 @@ export function PhotosField({
 
   const remove = (index: number) => onChange(value.filter((_, i) => i !== index));
 
+  // Two inputs, because one cannot be both: `capture` forces the camera and
+  // hides the gallery entirely on iOS and most Android browsers.
+  const inputProps = {
+    type: "file" as const,
+    accept: "image/*",
+    multiple: true,
+    className: "hidden",
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { files } = e.target;
+      e.target.value = "";
+      handleFiles(files).catch(() => setBusy(false));
+    },
+  };
+
   return (
     <div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          void handleFiles(e.target.files);
-          e.target.value = "";
-        }}
-      />
+      <input ref={galleryRef} {...inputProps} />
+      <input ref={cameraRef} capture="environment" {...inputProps} />
 
       {value.length > 0 && (
         <ul className="mb-3 grid grid-cols-3 gap-2">
@@ -69,10 +90,37 @@ export function PhotosField({
         </ul>
       )}
 
-      <Button type="button" onClick={() => inputRef.current?.click()} disabled={busy} full>
-        <IconPlus />
-        {busy ? t("processingPhotos", lang) : t("addPhotos", lang)}
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          onClick={() => cameraRef.current?.click()}
+          disabled={busy || full}
+          className="flex-1"
+        >
+          <IconCamera />
+          {busy ? t("processingPhotos", lang) : t("takePhoto", lang)}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => galleryRef.current?.click()}
+          disabled={busy || full}
+          className="flex-1"
+        >
+          <IconImage />
+          {t("chooseFromGallery", lang)}
+        </Button>
+      </div>
+
+      {full && (
+        <p className="mt-2 text-xs text-[color:var(--ink-muted)]">
+          {t("photosMax", lang).replace("{n}", String(MAX_PHOTOS))}
+        </p>
+      )}
+      {failed > 0 && (
+        <p className="mt-2 text-xs text-[color:var(--color-clay-600)]">
+          {t("photosFailed", lang).replace("{n}", String(failed))}
+        </p>
+      )}
     </div>
   );
 }

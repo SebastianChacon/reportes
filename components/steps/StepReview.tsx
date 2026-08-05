@@ -16,6 +16,13 @@ import type { JobReport, Lang } from "@/lib/types";
 import { SignaturePad } from "../SignaturePad";
 import { Button, Section } from "../ui";
 
+const FAILURE_MESSAGE: Record<"config" | "too_large" | "network" | "queue_full", UIKey> = {
+  config: "sendFailedConfig",
+  too_large: "sendFailedTooLarge",
+  queue_full: "sendFailedQueueFull",
+  network: "sendFailed",
+};
+
 function Line({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-1.5">
@@ -35,6 +42,7 @@ export function StepReview({
   onSend,
   onDownload,
   status,
+  failure,
 }: {
   report: JobReport;
   lang: Lang;
@@ -43,6 +51,7 @@ export function StepReview({
   onSend: () => void;
   onDownload: () => void;
   status: "idle" | "sending" | "error";
+  failure?: { reason: "config" | "too_large" | "network" | "queue_full"; hint?: string } | null;
 }) {
   const missing = missingRequired(report);
   const warns = warnings(report);
@@ -272,9 +281,19 @@ export function StepReview({
       </Section>
 
       {status === "error" && (
-        <p className="rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] p-3 text-sm text-[color:var(--color-clay-600)]">
-          {t("sendFailed", lang)}
-        </p>
+        <div className="rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] p-3 text-sm text-[color:var(--color-clay-600)]">
+          <p>{t(FAILURE_MESSAGE[failure?.reason ?? "network"], lang)}</p>
+          {failure?.hint && (
+            // The office needs the literal server reason to fix a config problem;
+            // the foreman can ignore it.
+            <details className="mt-2">
+              <summary className="cursor-pointer text-xs opacity-80">
+                {t("sendFailedDetail", lang)}
+              </summary>
+              <p className="mt-1 break-words font-mono text-[11px] opacity-80">{failure.hint}</p>
+            </details>
+          )}
+        </div>
       )}
 
       <div className="space-y-2.5">

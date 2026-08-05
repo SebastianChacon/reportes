@@ -17,6 +17,7 @@ import {
   saveLastCrew,
   saveLastJobInfo,
   type OutboxItem,
+  type SaveResult,
 } from "@/lib/storage";
 import { emptyReport, type JobReport, type Lang } from "@/lib/types";
 import { missingRequired } from "@/lib/calc";
@@ -35,12 +36,30 @@ const STEPS: UIKey[] = ["stepJob", "stepTimes", "stepCrew", "stepWork", "stepRes
 
 type SendStatus = "idle" | "sending" | "error";
 
+/** Why a send failed, so the UI can stop telling everyone to "try again with signal". */
+type SendFailure = {
+  ok: false;
+  /** Retrying will never work — a config or size problem, not a dead spot. */
+  permanent: boolean;
+  /** `queue_full` is set by the caller, not the request: the send failed *and*
+   *  the device had no room to hold the report for a later retry. */
+  reason: "config" | "too_large" | "network" | "queue_full";
+  hint?: string;
+};
+type SendResult = { ok: true } | SendFailure;
+
+/** A stalled upload on flaky signal would otherwise leave "Sending…" forever. */
+const SEND_TIMEOUT_MS = 90_000;
+
 /** POST one report to the office. Shared by the main "Send" button and outbox retries. */
-async function sendReport(report: JobReport, lang: Lang): Promise<boolean> {
+async function sendReport(report: JobReport, lang: Lang): Promise<SendResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
   try {
     const response = await fetch("/api/send-report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
       body: JSON.stringify({
         report,
         lang,
@@ -49,9 +68,22 @@ async function sendReport(report: JobReport, lang: Lang): Promise<boolean> {
         photos: (report.photos ?? []).map(stripDataUrlPrefix),
       }),
     });
-    return response.ok;
+    if (response.ok) return { ok: true };
+
+    const body = await response.json().catch(() => ({}) as Record<string, unknown>);
+    const permanent = body.permanent === true;
+    const reason: SendFailure["reason"] =
+      response.status === 413 || body.error === "photos_too_large" || body.error === "pdf_too_large"
+        ? "too_large"
+        : permanent
+          ? "config"
+          : "network";
+    return { ok: false, permanent, reason, hint: typeof body.hint === "string" ? body.hint : undefined };
   } catch {
-    return false;
+    // Offline, aborted, or the request never reached the server — worth retrying.
+    return { ok: false, permanent: false, reason: "network" };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -77,9 +109,13 @@ export function JobReportApp() {
   const [outboxOpen, setOutboxOpen] = React.useState(false);
   const [resendingId, setResendingId] = React.useState<string | null>(null);
   const [online, setOnline] = React.useState(true);
+  const [failure, setFailure] = React.useState<SendFailure | null>(null);
+  const [draftWarning, setDraftWarning] = React.useState<SaveResult>("ok");
   const mainRef = React.useRef<HTMLElement>(null);
   const langRef = React.useRef(lang);
   langRef.current = lang;
+  /** Guards against two outbox drains overlapping and double-sending a report. */
+  const flushing = React.useRef(false);
 
   /* ---- restore language + draft on first paint ---- */
   React.useEffect(() => {
@@ -97,7 +133,7 @@ export function JobReportApp() {
   /* ---- autosave: the phone dies, the report doesn't ---- */
   React.useEffect(() => {
     if (!hydrated || done) return;
-    saveDraft(report);
+    setDraftWarning(saveDraft(report));
   }, [report, hydrated, done]);
 
   /* ---- connectivity: visible from step 1, not just at review ---- */
@@ -118,32 +154,54 @@ export function JobReportApp() {
     setOutbox(loadOutbox());
 
     const flush = async () => {
-      for (const item of loadOutbox()) {
-        const ok = await sendReport(item.report, langRef.current);
-        if (ok) {
-          removeFromOutbox(item.id);
-          rememberForNextTime(item.report);
-          clearDraftIfUnchanged(item.report);
+      // Mobile browsers fire `online` several times as a connection settles, and
+      // a manual "Resend" can land mid-flush. Without this guard the same report
+      // is POSTed twice and the office gets duplicate emails.
+      if (flushing.current) return;
+      flushing.current = true;
+      try {
+        for (const item of loadOutbox()) {
+          const result = await sendReport(item.report, langRef.current);
+          if (result.ok) {
+            removeFromOutbox(item.id);
+            rememberForNextTime(item.report);
+            clearDraftIfUnchanged(item.report);
+          } else if (result.permanent) {
+            // Nothing about waiting for better signal will fix this one; stop
+            // hammering the endpoint and leave it for the foreman to act on.
+            break;
+          }
         }
+        setOutbox(loadOutbox());
+      } finally {
+        flushing.current = false;
       }
-      setOutbox(loadOutbox());
     };
 
-    if (navigator.onLine) flush();
-    window.addEventListener("online", flush);
-    return () => window.removeEventListener("online", flush);
+    if (navigator.onLine) void flush();
+    const onOnline = () => void flush();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
   }, [hydrated]);
 
   const retryOutboxItem = async (item: OutboxItem) => {
+    if (flushing.current) return;
+    flushing.current = true;
     setResendingId(item.id);
-    const ok = await sendReport(item.report, lang);
-    if (ok) {
-      removeFromOutbox(item.id);
-      rememberForNextTime(item.report);
-      clearDraftIfUnchanged(item.report);
-      setOutbox(loadOutbox());
+    try {
+      const result = await sendReport(item.report, lang);
+      if (result.ok) {
+        removeFromOutbox(item.id);
+        rememberForNextTime(item.report);
+        clearDraftIfUnchanged(item.report);
+        setOutbox(loadOutbox());
+      } else {
+        setFailure(result);
+      }
+    } finally {
+      flushing.current = false;
+      setResendingId(null);
     }
-    setResendingId(null);
   };
 
   const changeLang = (next: Lang) => {
@@ -168,23 +226,33 @@ export function JobReportApp() {
 
   const handleSend = async () => {
     if (missingRequired(report).length > 0) return;
+    if (status === "sending") return;
     setStatus("sending");
+    setFailure(null);
 
     const submitted: JobReport = { ...report, submittedAt: new Date().toISOString() };
-    const ok = await sendReport(submitted, lang);
+    const result = await sendReport(submitted, lang);
 
-    if (ok) {
+    if (result.ok) {
       rememberForNextTime(submitted);
       clearDraft();
       setReport(submitted);
       setDone(true);
       setStatus("idle");
-    } else {
-      // Hold it on the device so a dead spot never costs a day's paperwork.
-      queueReport(submitted);
-      setOutbox(loadOutbox());
-      setStatus("error");
+      return;
     }
+
+    // Hold it on the device so a dead spot never costs a day's paperwork — but
+    // only when a retry could actually succeed, and only if the write landed.
+    if (result.permanent) {
+      setFailure(result);
+    } else if (queueReport(submitted)) {
+      setOutbox(loadOutbox());
+      setFailure(result);
+    } else {
+      setFailure({ ...result, reason: "queue_full" });
+    }
+    setStatus("error");
   };
 
   const startNew = () => {
@@ -330,11 +398,22 @@ export function JobReportApp() {
             onSend={handleSend}
             onDownload={handleDownload}
             status={status}
+            failure={failure}
           />
         )}
 
         <div className="mt-6 flex items-center justify-between gap-3 pb-2">
-          <p className="text-xs text-[color:var(--ink-muted)]">✓ {t("autosaved", lang)}</p>
+          <p
+            className={
+              draftWarning === "ok"
+                ? "text-xs text-[color:var(--ink-muted)]"
+                : "text-xs font-medium text-[color:var(--color-clay-600)]"
+            }
+          >
+            {draftWarning === "ok" && `✓ ${t("autosaved", lang)}`}
+            {draftWarning === "ok-without-photos" && `⚠ ${t("autosaveNoPhotos", lang)}`}
+            {draftWarning === "failed" && `⚠ ${t("autosaveFailed", lang)}`}
+          </p>
           <button
             type="button"
             onClick={() => setConfirmReset(true)}

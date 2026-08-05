@@ -90,6 +90,13 @@ export const UI = {
     es: "Fotos de antes / después ayudan mucho a la oficina",
   },
   processingPhotos: { en: "Processing…", es: "Procesando…" },
+  takePhoto: { en: "Take photo", es: "Tomar foto" },
+  chooseFromGallery: { en: "Gallery", es: "Galería" },
+  photosMax: { en: "Maximum {n} photos", es: "Máximo {n} fotos" },
+  photosFailed: {
+    en: "{n} photo(s) could not be read and were skipped.",
+    es: "No se pudieron leer {n} foto(s) y se omitieron.",
+  },
 
   // Step 5 — resources
   equipment: { en: "Equipment", es: "Equipo" },
@@ -150,6 +157,21 @@ export const UI = {
     en: "Could not send. Download the PDF and send it manually, or try again when you have signal.",
     es: "No se pudo enviar. Descarga el PDF y mándalo a mano, o intenta de nuevo cuando tengas señal.",
   },
+  // Send failures the foreman can act on — a dead spot and a broken email
+  // account need very different reactions, so they must not read the same.
+  sendFailedConfig: {
+    en: "Email is not set up on the server, so retrying will not help. Download the PDF and send it manually, and tell the office.",
+    es: "El correo no está configurado en el servidor, reintentar no va a servir. Descarga el PDF y mándalo a mano, y avisa a la oficina.",
+  },
+  sendFailedTooLarge: {
+    en: "The report is too heavy to email — remove a few photos and try again.",
+    es: "El reporte pesa demasiado para enviarlo — quita algunas fotos e intenta de nuevo.",
+  },
+  sendFailedQueueFull: {
+    en: "Could not send, and this phone has no room left to save the report. Download the PDF now so it is not lost.",
+    es: "No se pudo enviar, y este teléfono ya no tiene espacio para guardar el reporte. Descarga el PDF ahora para no perderlo.",
+  },
+  sendFailedDetail: { en: "Details", es: "Detalles" },
   retry: { en: "Try again", es: "Intentar de nuevo" },
   offline: { en: "No connection — your report is saved on this phone", es: "Sin conexión — tu reporte está guardado en este teléfono" },
 
@@ -176,6 +198,14 @@ export const UI = {
 
   // Misc
   autosaved: { en: "Saved on this device", es: "Guardado en este dispositivo" },
+  autosaveNoPhotos: {
+    en: "Saved, but this phone is full — photos are not being kept. Send soon.",
+    es: "Guardado, pero el teléfono está lleno — las fotos no se están guardando. Envía pronto.",
+  },
+  autosaveFailed: {
+    en: "Could not save on this phone — do not close the app before sending.",
+    es: "No se pudo guardar en este teléfono — no cierres la app antes de enviar.",
+  },
   startOver: { en: "Start over", es: "Empezar de nuevo" },
   startOverConfirm: {
     en: "Delete this report and start over?",

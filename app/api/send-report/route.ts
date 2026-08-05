@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import type { JobReport, Lang } from "@/lib/types";
-import { crewTotalHours, formatHours, materialsTotalCost, onSiteHours, totalDayHours } from "@/lib/calc";
+import { formatHours, materialsTotalCost, onSiteHours, totalDayHours } from "@/lib/calc";
 import { dayOfWeek } from "@/lib/i18n";
 
 export const runtime = "nodejs";
@@ -22,6 +22,7 @@ type Payload = {
 };
 
 function escapeHtml(s: string): string {
+  if (typeof s !== "string") return "";
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -138,6 +139,26 @@ function summaryHtml(r: JobReport, lang: Lang): string {
 </div>`.trim();
 }
 
+/** Extracts the domain from a bare address or a `Name <addr@host>` header. */
+function domainOf(address: string): string {
+  const bare = address.includes("<") ? address.slice(address.indexOf("<") + 1, address.indexOf(">")) : address;
+  return bare.split("@")[1]?.trim().toLowerCase() ?? "";
+}
+
+/**
+ * RFC 2606 reserves these for documentation — they can never be verified as a
+ * Resend sending domain, so a placeholder left in REPORT_FROM_EMAIL turns every
+ * send into an opaque 403. Catch it here and say what is actually wrong.
+ */
+const RESERVED_DOMAINS = ["example", "invalid", "test", "localhost"];
+
+export function isPlaceholderSender(from: string): boolean {
+  const domain = domainOf(from);
+  if (!domain) return true;
+  const tld = domain.split(".").pop() ?? "";
+  return RESERVED_DOMAINS.includes(tld) || domain === "example.com";
+}
+
 export async function POST(request: Request) {
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.REPORT_TO_EMAIL;
@@ -145,8 +166,32 @@ export async function POST(request: Request) {
 
   if (!apiKey || !to || !from) {
     // Not configured — tell the client so it can fall back to "download PDF".
+    const absent = [
+      !apiKey && "RESEND_API_KEY",
+      !to && "REPORT_TO_EMAIL",
+      !from && "REPORT_FROM_EMAIL",
+    ].filter(Boolean);
+    console.error(`send-report not configured — missing ${absent.join(", ")}`);
     return NextResponse.json(
-      { error: "email_not_configured", hint: "Set RESEND_API_KEY, REPORT_TO_EMAIL and REPORT_FROM_EMAIL" },
+      {
+        error: "email_not_configured",
+        permanent: true,
+        hint: `Missing ${absent.join(", ")} in this environment`,
+      },
+      { status: 503 }
+    );
+  }
+
+  if (isPlaceholderSender(from)) {
+    console.error(
+      `send-report misconfigured — REPORT_FROM_EMAIL is "${from}", a reserved domain that Resend can never verify.`
+    );
+    return NextResponse.json(
+      {
+        error: "email_not_configured",
+        permanent: true,
+        hint: `REPORT_FROM_EMAIL is set to the placeholder "${from}". Point it at an address on a domain verified at https://resend.com/domains`,
+      },
       { status: 503 }
     );
   }
@@ -166,8 +211,15 @@ export async function POST(request: Request) {
   // Reports can sit in the client's draft/outbox localStorage across app updates, so a
   // queued report may predate a schema change and be missing newer array fields entirely.
   const arr = <T,>(v: T[] | undefined): T[] => (Array.isArray(v) ? v : []);
+  const str = (v: unknown): string => (typeof v === "string" ? v : "");
   const report: JobReport = {
     ...rawReport,
+    startYard: str(rawReport.startYard),
+    startJob: str(rawReport.startJob),
+    endJob: str(rawReport.endJob),
+    endYard: str(rawReport.endYard),
+    notes: str(rawReport.notes),
+    clientName: str(rawReport.clientName),
     jobNumbers: arr(rawReport.jobNumbers),
     truckNumbers: arr(rawReport.truckNumbers),
     crew: arr(rawReport.crew),
@@ -177,21 +229,24 @@ export async function POST(request: Request) {
     subcontractors: arr(rawReport.subcontractors),
     trucks: arr(rawReport.trucks),
     photos: arr(rawReport.photos),
-    description: rawReport.description ?? {
-      original: "",
-      originalLang: lang ?? "en",
-      translation: null,
-      translationLang: null,
-      unknownTerms: [],
-      showingTranslation: false,
+    // Spelled out field by field rather than spread over a default: an old draft
+    // can carry a description object that is missing individual keys, and
+    // summaryHtml and the PDF both dereference `original` unconditionally.
+    description: {
+      original: str(rawReport.description?.original),
+      originalLang: rawReport.description?.originalLang ?? lang ?? "en",
+      translation: rawReport.description?.translation ?? null,
+      translationLang: rawReport.description?.translationLang ?? null,
+      unknownTerms: arr(rawReport.description?.unknownTerms),
+      showingTranslation: rawReport.description?.showingTranslation ?? false,
     },
   };
   if (pdfBase64.length * 0.75 > MAX_PDF_BYTES) {
-    return NextResponse.json({ error: "pdf_too_large" }, { status: 413 });
+    return NextResponse.json({ error: "pdf_too_large", permanent: true }, { status: 413 });
   }
   const photosBytes = photos.reduce((sum, p) => sum + p.length * 0.75, 0);
   if (photosBytes > MAX_PHOTOS_BYTES) {
-    return NextResponse.json({ error: "photos_too_large" }, { status: 413 });
+    return NextResponse.json({ error: "photos_too_large", permanent: true }, { status: 413 });
   }
 
   const subject = `Job Report — ${report.clientName} — ${report.date}${
@@ -214,12 +269,29 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("resend error", error);
-      return NextResponse.json({ error: "send_failed" }, { status: 502 });
+      // A rejected sender, an unverified domain or a bad key will be rejected
+      // identically on every retry — queuing those in the outbox just hides a
+      // config problem behind "try again when you have signal".
+      const PERMANENT_RESEND_ERRORS = [
+        "validation_error", // unverified sending domain — the usual culprit
+        "invalid_from_address",
+        "invalid_access",
+        "invalid_parameter",
+        "invalid_api_Key", // Resend's own spelling
+        "missing_api_key",
+        "missing_required_field",
+      ];
+      const permanent = PERMANENT_RESEND_ERRORS.includes(error.name);
+      return NextResponse.json(
+        { error: "send_failed", permanent, hint: error.message },
+        { status: permanent ? 422 : 502 }
+      );
     }
 
     return NextResponse.json({ ok: true, id: data?.id });
   } catch (err) {
     console.error("send-report failed", err);
-    return NextResponse.json({ error: "send_failed" }, { status: 502 });
+    // Network/timeout against Resend — genuinely worth another try later.
+    return NextResponse.json({ error: "send_failed", permanent: false }, { status: 502 });
   }
 }
