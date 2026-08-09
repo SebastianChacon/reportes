@@ -96,6 +96,56 @@ El email lleva un resumen en HTML y el **PDF de una página** adjunto, con el mi
 
 ---
 
+## La copia de la oficina (Convex)
+
+Cada reporte enviado se archiva además en una base de datos, para que el PM pueda
+revisarlos por día y por persona. Es la **Fase 0** del plan: la base ya guarda, la
+consola de revisión todavía no existe.
+
+### Encenderlo
+
+```bash
+npx convex dev
+```
+
+Pide iniciar sesión con tu cuenta de Convex, crea el deployment y escribe
+`CONVEX_DEPLOYMENT` en `.env.local`. Copiá la URL que imprime a `NEXT_PUBLIC_CONVEX_URL`.
+
+**Sin esa variable la app funciona exactamente igual que antes**: el reporte sale por
+la hoja de compartir y no se archiva nada. Como el teléfono ya guarda los últimos 20
+reportes enviados, la primera reconexión después de configurarla **archiva los que ya
+estaban** — no se pierde el trabajo de las semanas anteriores.
+
+### Qué se guarda y por qué
+
+| Tabla | Para qué |
+|---|---|
+| `reports` | El reporte completo, más `totals` y `flags` calculados **al escribir** con `lib/calc.ts`, para que la consola nunca contradiga al PDF |
+| `crewDays` | Una fila por persona por reporte. Es lo único que hace que "elegir una persona y ver su día" sea una lectura indexada en vez de recorrer todos los reportes |
+| `photos` | Van a file storage, no al documento: Convex corta los documentos en 1 MB |
+| `users` | Correo, nombre y rol (`foreman` / `manager` / `admin`) |
+
+Tres decisiones que sostienen el diseño:
+
+- **`reports.submit` es idempotente** sobre `JobReport.id`. La cola reintenta varias
+  veces cuando vuelve la señal — los navegadores móviles disparan `online` repetidas
+  veces mientras se estabiliza la conexión — y un segundo envío del mismo reporte
+  tiene que ser un no-op, o la nómina cuenta el día dos veces.
+- **`personId` es el id del catálogo**, nunca el nombre. A quien el capataz escribe a
+  mano se le guarda `personId: null`: aparece en el reporte pero no inventa una
+  persona nueva en la lista cada vez.
+- **Primero suben las fotos, después el reporte.** Un reporte que aparece en la
+  consola mientras sus fotos todavía suben se lee como un reporte sin fotos.
+
+Archivar es siempre **best-effort y posterior al envío**: pase lo que pase con la base,
+el capataz ya mandó su reporte y nunca ve un error de esto. Si falla, la entrada queda
+sin marcar en el historial y se reintenta en la próxima reconexión.
+
+`convex/_generated/` está escrito a mano porque el codegen real necesita un deployment;
+`npx convex dev` lo sobrescribe con el mismo contenido.
+
+---
+
 ## Editar la lista de personal
 
 La lista vive en [lib/catalog.ts](lib/catalog.ts), en la constante `CREW`. Cada persona es una línea:

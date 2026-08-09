@@ -192,6 +192,16 @@ export type HistoryEntry = {
   /** True when the phone was too full to keep the photos — distinct from a
    *  report that simply had none, which must not be labelled as lossy. */
   photosDropped?: boolean;
+  /**
+   * When the office's copy was accepted. Absent means it never landed — the
+   * report went out by share sheet or email but the database never saw it,
+   * usually because the phone had no signal at the time.
+   *
+   * The history doubles as the retry queue for this: it is already durable,
+   * already capped, and already holds the whole report, so filing does not
+   * need a second copy of every photo sitting in localStorage beside it.
+   */
+  filedAt?: string;
 };
 
 /** Enough to cover a couple of weeks of work without eating the storage budget. */
@@ -249,4 +259,27 @@ export function saveToHistory(report: JobReport, via: SentVia): boolean {
 
 export function removeFromHistory(id: string): void {
   safeSet(HISTORY_KEY, JSON.stringify(loadHistory().filter((e) => e.id !== id)));
+}
+
+/* ---------- filing: which sent reports the office has actually received ---------- */
+
+/**
+ * Sent reports the database has not acknowledged yet.
+ *
+ * Entries that predate this field have no `filedAt`, so the first reconnect
+ * after a deployment is configured backfills them. That is deliberate: the two
+ * weeks of work already on the phone are exactly the data the office wants on
+ * day one, and `reports.submit` is idempotent, so a report that somehow went up
+ * twice costs an ignored write rather than a duplicate day.
+ */
+export function loadUnfiledHistory(): HistoryEntry[] {
+  return loadHistory().filter((entry) => !entry.filedAt);
+}
+
+/** Records that the office's copy landed, so the next reconnect skips it. */
+export function markHistoryFiled(entryId: string, at: string = new Date().toISOString()): void {
+  const updated = loadHistory().map((entry) =>
+    entry.id === entryId ? { ...entry, filedAt: at } : entry
+  );
+  safeSet(HISTORY_KEY, JSON.stringify(updated));
 }

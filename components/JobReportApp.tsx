@@ -11,6 +11,8 @@ import {
   loadHistory,
   loadLang,
   loadOutbox,
+  loadUnfiledHistory,
+  markHistoryFiled,
   queueReport,
   removeFromOutbox,
   saveDraft,
@@ -26,6 +28,7 @@ import {
 import { emptyReport, type JobReport, type Lang } from "@/lib/types";
 import { missingRequired, timeErrors } from "@/lib/calc";
 import { stripDataUrlPrefix } from "@/lib/photos";
+import { fileWithOffice } from "@/lib/office";
 import { mailtoUrl, REPORT_TO, shareReport } from "@/lib/share";
 import { HistoryPanel } from "./HistoryPanel";
 import { LanguageToggle } from "./LanguageToggle";
@@ -158,6 +161,24 @@ export function JobReportApp() {
     };
   }, []);
 
+  /**
+   * Files one already-sent report with the office.
+   *
+   * Everything about this is deliberately invisible. The report has already
+   * gone out by share sheet or email — the send the foreman cares about is
+   * done — and whether a database exists yet is not his problem. A failure
+   * leaves the entry unmarked in the history, which is what the reconnect
+   * flush picks back up.
+   */
+  const fileEntry = React.useCallback(async (entry: HistoryEntry | undefined) => {
+    if (!entry) return;
+    const result = await fileWithOffice(entry.report);
+    if (result === "filed" || result === "duplicate") {
+      markHistoryFiled(entry.id);
+      setHistory(loadHistory());
+    }
+  }, []);
+
   /* ---- outbox: reports that failed to send earlier, retried when signal comes back ---- */
   React.useEffect(() => {
     if (!hydrated) return;
@@ -186,6 +207,13 @@ export function JobReportApp() {
         }
         setOutbox(loadOutbox());
         setHistory(loadHistory());
+
+        // Reports that went out by share sheet never touched the server, so the
+        // loop above never sees them. Their copy for the office is filed here,
+        // once, on the first reconnect after they were sent.
+        for (const entry of loadUnfiledHistory()) {
+          await fileEntry(entry);
+        }
       } finally {
         flushing.current = false;
       }
@@ -195,7 +223,7 @@ export function JobReportApp() {
     const onOnline = () => void flush();
     window.addEventListener("online", onOnline);
     return () => window.removeEventListener("online", onOnline);
-  }, [hydrated]);
+  }, [hydrated, fileEntry]);
 
   const retryOutboxItem = async (item: OutboxItem) => {
     if (flushing.current) return;
@@ -269,6 +297,12 @@ export function JobReportApp() {
     setReport(submitted);
     setStatus("idle");
     setDone(true);
+
+    // The office's copy is filed after the fact, never in front of the foreman.
+    // `saveToHistory` writes newest-first, so the entry just stored is the head
+    // of the list — and if it could not be stored there is nothing to retry
+    // from, which the "couldn't keep a copy" warning already covers.
+    if (kept) void fileEntry(loadHistory()[0]);
   };
 
   /**
