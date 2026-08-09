@@ -43,6 +43,7 @@ export function StepReview({
   update,
   onEditStep,
   onSend,
+  onServerSend,
   onDownload,
   status,
   failure,
@@ -52,6 +53,7 @@ export function StepReview({
   update: (patch: Partial<JobReport>) => void;
   onEditStep: (index: number) => void;
   onSend: () => void;
+  onServerSend: () => void;
   onDownload: () => void;
   status: "idle" | "sending" | "error";
   failure?: { reason: "config" | "too_large" | "network" | "queue_full"; hint?: string } | null;
@@ -336,6 +338,14 @@ export function StepReview({
         <Button full onClick={onDownload} disabled={blocked}>
           {t("downloadPdf", lang)}
         </Button>
+        <div className="border-t border-[color:var(--line)] pt-2.5">
+          <Button full onClick={onServerSend} disabled={blocked || status === "sending"}>
+            {t("sendViaServer", lang)}
+          </Button>
+          <p className="mt-1.5 text-center text-xs text-[color:var(--ink-muted)]">
+            {t("sendViaServerHint", lang)}
+          </p>
+        </div>
       </div>
     </div>
   );

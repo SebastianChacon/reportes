@@ -5,6 +5,7 @@ const LANG_KEY = "btn.jobreport.lang";
 const LAST_CREW_KEY = "btn.jobreport.lastCrew";
 const LAST_JOB_KEY = "btn.jobreport.lastJob";
 const OUTBOX_KEY = "btn.jobreport.outbox";
+const HISTORY_KEY = "btn.jobreport.history";
 
 function safeGet(key: string): string | null {
   try {
@@ -175,4 +176,77 @@ export function queueReport(report: JobReport): boolean {
 
 export function removeFromOutbox(id: string): void {
   safeSet(OUTBOX_KEY, JSON.stringify(loadOutbox().filter((i) => i.id !== id)));
+}
+
+/* ---------- history: reports that already went out ---------- */
+
+/** How the report left the phone. Worth recording: "shared" is the only one
+ *  where we never saw a delivery confirmation, so the history has to keep it. */
+export type SentVia = "share" | "email" | "server";
+
+export type HistoryEntry = {
+  id: string;
+  report: JobReport;
+  sentAt: string;
+  via: SentVia;
+  /** True when the phone was too full to keep the photos — distinct from a
+   *  report that simply had none, which must not be labelled as lossy. */
+  photosDropped?: boolean;
+};
+
+/** Enough to cover a couple of weeks of work without eating the storage budget. */
+const MAX_HISTORY = 20;
+
+export function loadHistory(): HistoryEntry[] {
+  const raw = safeGet(HISTORY_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as HistoryEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Keeps a sent report on the phone, newest first.
+ *
+ * `navigator.share()` resolving means the OS handed the PDF to Gmail — not that
+ * the mail went out. Until this existed, clearing the draft right afterwards was
+ * the only copy of the report disappearing on the strength of that assumption.
+ *
+ * Returns false when nothing could be persisted, so the caller can keep the
+ * draft instead of promising a copy that isn't there.
+ */
+export function saveToHistory(report: JobReport, via: SentVia): boolean {
+  const entry: HistoryEntry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    report,
+    sentAt: report.submittedAt ?? new Date().toISOString(),
+    via,
+  };
+
+  const existing = loadHistory();
+  if (safeSet(HISTORY_KEY, JSON.stringify([entry, ...existing].slice(0, MAX_HISTORY)))) return true;
+
+  // Out of room. Photos are the bulk of every entry and the report itself is
+  // what the office would ask for, so shed them before shedding reports.
+  const lean: HistoryEntry = {
+    ...entry,
+    report: { ...report, photos: [] },
+    photosDropped: report.photos.length > 0,
+  };
+  const shed: HistoryEntry[] = existing.map((e) => ({
+    ...e,
+    report: { ...e.report, photos: [] },
+    photosDropped: e.photosDropped || e.report.photos.length > 0,
+  }));
+  for (let keep = shed.length; keep >= 0; keep -= 1) {
+    if (safeSet(HISTORY_KEY, JSON.stringify([lean, ...shed.slice(0, keep)]))) return true;
+  }
+  return false;
+}
+
+export function removeFromHistory(id: string): void {
+  safeSet(HISTORY_KEY, JSON.stringify(loadHistory().filter((e) => e.id !== id)));
 }

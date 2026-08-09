@@ -48,8 +48,8 @@ function summaryHtml(r: JobReport, lang: Lang): string {
   const materialsRows = r.materials
     .map(
       (m) =>
-        `<li style="margin:2px 0">${escapeHtml(m.label[lang])}${
-          m.qty !== null ? ` ×${m.qty}` : ""
+        `<li style="margin:2px 0">${escapeHtml(m.label?.[lang] ?? "")}${
+          m.qty !== null ? ` ×${escapeHtml(String(m.qty))}` : ""
         } <span style="color:#71717a">(${m.source === "BTN" ? "BTN" : "other"})</span></li>`
     )
     .join("");
@@ -153,6 +153,51 @@ function domainOf(address: string): string {
  */
 const RESERVED_DOMAINS = ["example", "invalid", "test", "localhost"];
 
+/**
+ * Only this app may post here. Without the check, anyone who finds the URL can
+ * send 8MB PDFs and 20MB of photos from the company's verified sending domain.
+ *
+ * A missing Origin (curl, a server-to-server call) is refused rather than
+ * waved through: every legitimate caller is a browser doing a same-origin fetch.
+ */
+export function isSameOrigin(origin: string | null, host: string | null): boolean {
+  if (!origin || !host) return false;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
+/** One report a foreman writes in a day; a dozen an hour is already abuse. */
+const RATE_LIMIT = 12;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+
+/**
+ * Per-instance and in-memory, so it is a speed bump rather than a wall: Fluid
+ * Compute reuses instances, but a burst spread across enough cold starts still
+ * gets through. It costs nothing and closes the trivial case; a shared counter
+ * (Upstash, Vercel Firewall rate limiting) is the real fix if this is ever
+ * exposed to more than the crew.
+ */
+const recentSends = new Map<string, number[]>();
+
+export function rateLimited(key: string, now: number = Date.now()): boolean {
+  const hits = (recentSends.get(key) ?? []).filter((at) => now - at < RATE_WINDOW_MS);
+  if (hits.length >= RATE_LIMIT) {
+    recentSends.set(key, hits);
+    return true;
+  }
+  recentSends.set(key, [...hits, now]);
+  // Stop the map from growing without bound on a long-lived instance.
+  if (recentSends.size > 500) {
+    for (const [k, v] of recentSends) {
+      if (v.every((at) => now - at >= RATE_WINDOW_MS)) recentSends.delete(k);
+    }
+  }
+  return false;
+}
+
 export function isPlaceholderSender(from: string): boolean {
   const domain = domainOf(from);
   if (!domain) return true;
@@ -161,6 +206,15 @@ export function isPlaceholderSender(from: string): boolean {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOrigin(request.headers.get("origin"), request.headers.get("host"))) {
+    return NextResponse.json({ error: "forbidden", permanent: true }, { status: 403 });
+  }
+
+  const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  if (rateLimited(ip)) {
+    return NextResponse.json({ error: "rate_limited", permanent: false }, { status: 429 });
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.REPORT_TO_EMAIL;
   const from = process.env.REPORT_FROM_EMAIL;
@@ -213,6 +267,11 @@ export async function POST(request: Request) {
   // queued report may predate a schema change and be missing newer array fields entirely.
   const arr = <T,>(v: T[] | undefined): T[] => (Array.isArray(v) ? v : []);
   const str = (v: unknown): string => (typeof v === "string" ? v : "");
+  // The body is JSON from a client we do not control, so a "number" may arrive
+  // as a string or NaN. `formatHours` calls `.toFixed` on whatever it gets and
+  // `materialsTotalCost` sums it — one bad field would 500 the whole send.
+  const num = (v: unknown): number | null =>
+    typeof v === "number" && Number.isFinite(v) ? v : null;
   const report: JobReport = {
     ...rawReport,
     startYard: str(rawReport.startYard),
@@ -226,9 +285,13 @@ export async function POST(request: Request) {
     clientName: str(rawReport.clientName),
     jobNumbers: arr(rawReport.jobNumbers),
     truckNumbers: arr(rawReport.truckNumbers),
-    crew: arr(rawReport.crew),
-    materials: arr(rawReport.materials),
-    plants: arr(rawReport.plants),
+    crew: arr(rawReport.crew).map((c) => ({ ...c, name: str(c?.name), hours: num(c?.hours) })),
+    materials: arr(rawReport.materials).map((m) => ({
+      ...m,
+      qty: num(m?.qty),
+      cost: num(m?.cost),
+    })),
+    plants: arr(rawReport.plants).map((p) => ({ ...p, qty: num(p?.qty), cost: num(p?.cost) })),
     equipment: arr(rawReport.equipment),
     subcontractors: arr(rawReport.subcontractors),
     trucks: arr(rawReport.trucks),

@@ -48,6 +48,11 @@ export function shareBody(report: JobReport, lang: Lang): string {
   // Built as blocks rather than a flat list, so dropping an empty optional field
   // never also swallows the blank line that separates two sections.
   const header = [
+    // First line on purpose: the share sheet cannot prefill a recipient, so this
+    // is the only place the foreman can read the address off instead of
+    // remembering it. It stays in the body even on the mailto path, where the
+    // recipient is already filled in — a visible copy costs nothing.
+    `Para: ${REPORT_TO}`,
     `Cliente: ${report.clientName}`,
     `Fecha: ${report.date} (${dayOfWeek(report.date, lang)})`,
     report.jobNumbers.length ? `Trabajo #: ${report.jobNumbers.join(", ")}` : null,

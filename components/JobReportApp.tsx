@@ -8,6 +8,7 @@ import {
   clearDraftIfUnchanged,
   detectBrowserLang,
   loadDraft,
+  loadHistory,
   loadLang,
   loadOutbox,
   queueReport,
@@ -16,13 +17,17 @@ import {
   saveLang,
   saveLastCrew,
   saveLastJobInfo,
+  saveToHistory,
+  type HistoryEntry,
   type OutboxItem,
   type SaveResult,
+  type SentVia,
 } from "@/lib/storage";
 import { emptyReport, type JobReport, type Lang } from "@/lib/types";
 import { missingRequired, timeErrors } from "@/lib/calc";
 import { stripDataUrlPrefix } from "@/lib/photos";
 import { mailtoUrl, REPORT_TO, shareReport } from "@/lib/share";
+import { HistoryPanel } from "./HistoryPanel";
 import { LanguageToggle } from "./LanguageToggle";
 import { OutboxPanel } from "./OutboxPanel";
 import { StepCrew } from "./steps/StepCrew";
@@ -108,6 +113,10 @@ export function JobReportApp() {
   const [confirmReset, setConfirmReset] = React.useState(false);
   const [outbox, setOutbox] = React.useState<OutboxItem[]>([]);
   const [outboxOpen, setOutboxOpen] = React.useState(false);
+  const [history, setHistory] = React.useState<HistoryEntry[]>([]);
+  const [historyOpen, setHistoryOpen] = React.useState(false);
+  /** False when the phone had no room to keep a copy of what was just sent. */
+  const [historyKept, setHistoryKept] = React.useState(true);
   const [resendingId, setResendingId] = React.useState<string | null>(null);
   const [online, setOnline] = React.useState(true);
   const [failure, setFailure] = React.useState<SendFailure | null>(null);
@@ -153,6 +162,7 @@ export function JobReportApp() {
   React.useEffect(() => {
     if (!hydrated) return;
     setOutbox(loadOutbox());
+    setHistory(loadHistory());
 
     const flush = async () => {
       // Mobile browsers fire `online` several times as a connection settles, and
@@ -165,6 +175,7 @@ export function JobReportApp() {
           const result = await sendReport(item.report, langRef.current);
           if (result.ok) {
             removeFromOutbox(item.id);
+            saveToHistory(item.report, "server");
             rememberForNextTime(item.report);
             clearDraftIfUnchanged(item.report);
           } else if (result.permanent) {
@@ -174,6 +185,7 @@ export function JobReportApp() {
           }
         }
         setOutbox(loadOutbox());
+        setHistory(loadHistory());
       } finally {
         flushing.current = false;
       }
@@ -193,9 +205,11 @@ export function JobReportApp() {
       const result = await sendReport(item.report, lang);
       if (result.ok) {
         removeFromOutbox(item.id);
+        saveToHistory(item.report, "server");
         rememberForNextTime(item.report);
         clearDraftIfUnchanged(item.report);
         setOutbox(loadOutbox());
+        setHistory(loadHistory());
       } else {
         setFailure(result);
       }
@@ -226,6 +240,38 @@ export function JobReportApp() {
   };
 
   /**
+   * Push an already-sent report back through the share sheet. This is what the
+   * history is for: the draft that was handed to Gmail last Tuesday and never
+   * actually went out can still be sent, from the phone, without redoing it.
+   */
+  const handleReshare = (entry: HistoryEntry) => {
+    shareReport(entry.report, lang)
+      .then((outcome) => {
+        if (outcome === "unsupported") {
+          downloadPdf(entry.report, lang);
+          window.location.href = mailtoUrl(entry.report, lang);
+        }
+      })
+      .catch(() => downloadPdf(entry.report, lang));
+  };
+
+  /**
+   * The report left the phone. Keep a copy before letting go of the draft: the
+   * draft is the only thing standing between the foreman and a lost day's work,
+   * so it is only cleared once the history actually holds a replacement.
+   */
+  const finishSend = (submitted: JobReport, via: SentVia) => {
+    const kept = saveToHistory(submitted, via);
+    rememberForNextTime(submitted);
+    if (kept) clearDraft();
+    setHistory(loadHistory());
+    setHistoryKept(kept);
+    setReport(submitted);
+    setStatus("idle");
+    setDone(true);
+  };
+
+  /**
    * Hands the PDF and photos to the phone's share sheet, so the report goes out
    * from the foreman's own Gmail/Mail/WhatsApp. No API key, no verified domain,
    * nothing to configure — which is why this is the primary path.
@@ -237,24 +283,67 @@ export function JobReportApp() {
     if (missingRequired(report).length > 0 || timeErrors(report).length > 0) return;
     if (status === "sending") return;
     setFailure(null);
+    setStatus("sending");
 
     const submitted: JobReport = { ...report, submittedAt: new Date().toISOString() };
 
     shareReport(submitted, lang)
       .then((outcome) => {
-        if (outcome === "cancelled") return;
+        if (outcome === "cancelled") {
+          // Backed out of the share sheet. Nothing happened; leave the report
+          // exactly as it was so the button can be pressed again.
+          setStatus("idle");
+          return;
+        }
         if (outcome === "unsupported") {
           // Desktop, or a browser without file sharing: download the PDF and
           // open the mail client with the recipient and summary prefilled.
           downloadPdf(submitted, lang);
           window.location.href = mailtoUrl(submitted, lang);
         }
-        rememberForNextTime(submitted);
-        clearDraft();
-        setReport(submitted);
-        setDone(true);
+        finishSend(submitted, outcome === "unsupported" ? "email" : "share");
       })
-      .catch(() => setFailure({ ok: false, permanent: false, reason: "network" }));
+      .catch(() => {
+        // Building the PDF or handing it to the OS failed — the report never
+        // left. Hold it on the phone so the outbox can drive it out instead.
+        const queued = queueReport(submitted);
+        setOutbox(loadOutbox());
+        setStatus("error");
+        setFailure({ ok: false, permanent: false, reason: queued ? "network" : "queue_full" });
+      });
+  };
+
+  /**
+   * The backup route: post the report to the office server, which emails it.
+   * Needed when the share sheet is a dead end — no mail app configured, or the
+   * foreman shared into the wrong place and wants it sent for real. A failure
+   * here is what fills the outbox, which then flushes when signal returns.
+   */
+  const handleServerSend = async () => {
+    if (missingRequired(report).length > 0 || timeErrors(report).length > 0) return;
+    if (status === "sending") return;
+    setFailure(null);
+    setStatus("sending");
+
+    const submitted: JobReport = { ...report, submittedAt: new Date().toISOString() };
+    const result = await sendReport(submitted, lang);
+
+    if (result.ok) {
+      finishSend(submitted, "server");
+      return;
+    }
+
+    setStatus("error");
+    if (result.permanent) {
+      // Waiting for better signal will not fix a bad key or an unverified
+      // domain, so it does not go in the outbox to be retried forever.
+      setFailure(result);
+      return;
+    }
+
+    const queued = queueReport(submitted);
+    setOutbox(loadOutbox());
+    setFailure(queued ? result : { ...result, reason: "queue_full" });
   };
 
 
@@ -264,6 +353,8 @@ export function JobReportApp() {
     setStep(0);
     setDone(false);
     setStatus("idle");
+    setFailure(null);
+    setHistoryKept(true);
     window.scrollTo({ top: 0 });
   };
 
@@ -301,6 +392,12 @@ export function JobReportApp() {
           <h1 className="text-2xl font-bold">{t("sent", lang)}</h1>
           <p className="mt-1.5 text-[color:var(--ink-muted)]">{t("sentBody", lang)}</p>
         </div>
+        {!historyKept && (
+          // The one case where "it's saved on your phone" would be a lie.
+          <p className="w-full rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] p-3 text-sm text-[color:var(--color-clay-600)]">
+            {t("historyFull", lang)}
+          </p>
+        )}
         <div className="w-full space-y-2.5">
           <Button variant="primary" full onClick={startNew}>
             {t("newReport", lang)}
@@ -308,7 +405,20 @@ export function JobReportApp() {
           <Button full onClick={handleDownload}>
             {t("downloadPdf", lang)}
           </Button>
+          {history.length > 0 && (
+            <Button full onClick={() => setHistoryOpen(true)}>
+              {t("history", lang)}
+            </Button>
+          )}
         </div>
+        {historyOpen && (
+          <HistoryPanel
+            lang={lang}
+            entries={history}
+            onShare={handleReshare}
+            onClose={() => setHistoryOpen(false)}
+          />
+        )}
       </main>
     );
   }
@@ -349,6 +459,16 @@ export function JobReportApp() {
                 className="chip font-semibold"
               >
                 {outbox.length} {t("pendingCount", lang)}
+              </button>
+            )}
+            {history.length > 0 && (
+              <button
+                type="button"
+                aria-label={t("history", lang)}
+                onClick={() => setHistoryOpen(true)}
+                className="chip font-semibold"
+              >
+                {t("historyShort", lang)}
               </button>
             )}
             <LanguageToggle lang={lang} onChange={changeLang} />
@@ -403,6 +523,7 @@ export function JobReportApp() {
             update={update}
             onEditStep={goTo}
             onSend={handleSend}
+            onServerSend={handleServerSend}
             onDownload={handleDownload}
             status={status}
             failure={failure}
@@ -489,6 +610,16 @@ export function JobReportApp() {
           resendingId={resendingId}
           onResend={retryOutboxItem}
           onClose={() => setOutboxOpen(false)}
+        />
+      )}
+
+      {/* ---- Already sent ---- */}
+      {historyOpen && (
+        <HistoryPanel
+          lang={lang}
+          entries={history}
+          onShare={handleReshare}
+          onClose={() => setHistoryOpen(false)}
         />
       )}
     </div>

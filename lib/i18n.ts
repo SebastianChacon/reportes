@@ -180,10 +180,17 @@ export const UI = {
     es: "Abre el menú de compartir del teléfono — elige Gmail, Mail o WhatsApp y mándalo a {to}. El PDF y las fotos van adjuntos.",
   },
   downloadPdf: { en: "Download PDF", es: "Descargar PDF" },
-  sent: { en: "Report sent", es: "Reporte enviado" },
+  // Deliberately not "Report sent": the share sheet only proves the phone handed
+  // the PDF to the mail app. Saying more than that is how a report gets lost.
+  sent: { en: "Report handed over", es: "Reporte entregado" },
   sentBody: {
-    en: "Make sure it went out from your mail app. You can start a new report.",
-    es: "Confirma que salió desde tu app de correo. Puedes empezar un reporte nuevo.",
+    en: "Now send it from your mail app — it is not out until you press send there. A copy is kept on this phone under History.",
+    es: "Ahora mándalo desde tu app de correo — no sale hasta que le des enviar ahí. Queda una copia en este teléfono, en Historial.",
+  },
+  sendViaServer: { en: "Send from the office server", es: "Enviar desde el servidor" },
+  sendViaServerHint: {
+    en: "Use this if the share menu did not work. The office receives it directly.",
+    es: "Usa esto si el menú de compartir no funcionó. La oficina lo recibe directo.",
   },
   newReport: { en: "New report", es: "Reporte nuevo" },
   sendFailed: {
@@ -220,6 +227,22 @@ export const UI = {
   resent: { en: "Sent", es: "Enviado" },
   queuedAt: { en: "Queued", es: "En cola" },
   close: { en: "Close", es: "Cerrar" },
+
+  // History — reports that already left the phone, kept so a mail draft
+  // abandoned in Gmail does not mean the report is gone.
+  history: { en: "Sent reports", es: "Reportes enviados" },
+  historyShort: { en: "Sent", es: "Enviados" },
+  historyEmpty: { en: "Nothing sent yet", es: "Todavía no enviaste nada" },
+  historyHint: {
+    en: "Kept on this phone. If one never left your mail app, send it again from here.",
+    es: "Guardados en este teléfono. Si alguno no salió de tu app de correo, mándalo otra vez desde aquí.",
+  },
+  historyNoPhotos: { en: "photos not kept", es: "sin fotos guardadas" },
+  historyFull: {
+    en: "This phone is full, so no copy was kept. Download the PDF now if you are not sure the mail went out.",
+    es: "El teléfono está lleno y no se guardó copia. Descarga el PDF ahora si no estás seguro de que el correo salió.",
+  },
+  sendAgain: { en: "Send again", es: "Enviar otra vez" },
 
   // Validation
   required: { en: "Required", es: "Obligatorio" },
