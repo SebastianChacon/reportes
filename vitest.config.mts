@@ -9,6 +9,14 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
+    /**
+     * Git worktrees live under `.claude/worktrees/`, inside the repo. Each one
+     * is a full checkout, so the default glob collects every branch's copy of
+     * every test — and the `@` alias below points them all at *this* checkout's
+     * `lib/`, so an old branch's component gets today's library. `npm test`
+     * then reports crashes that exist in no commit.
+     */
+    exclude: ["**/node_modules/**", "**/dist/**", "**/.claude/**"],
   },
   resolve: {
     alias: {
