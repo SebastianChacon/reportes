@@ -140,6 +140,15 @@ export const reportFields = {
   submittedBy: v.optional(v.id("users")),
   reviewedAt: v.optional(v.string()),
   reviewedBy: v.optional(v.id("users")),
+
+  /**
+   * Why the office sent it back — "faltan las horas de Carlos".
+   *
+   * The note is what makes `needs_review` mean something to the foreman. Without
+   * it the phone can say a report was returned but not what to fix, which is the
+   * telephone call this is meant to replace.
+   */
+  reviewNote: v.optional(v.string()),
 };
 
 /* ------------------------------------------------------------------ */

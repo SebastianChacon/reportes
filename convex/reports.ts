@@ -74,26 +74,35 @@ export const submit = mutation({
 });
 
 /**
- * Approve a report, or send it back to the review queue.
+ * Approve a report, or send it back to the foreman with a note.
  *
  * Lives here rather than in the console so the audit fields are written in one
  * place; the console calls it once auth is wired in Phase 1.
+ *
+ * `note` is not merged — it is replaced by whatever this call passes, so
+ * approving without one clears it. A correction that has already been made
+ * should not keep showing on the report as if it were still outstanding.
  */
 export const setStatus = mutation({
   args: {
     reportId: v.id("reports"),
     status: v.union(v.literal("approved"), v.literal("needs_review"), v.literal("submitted")),
     reviewedBy: v.optional(v.id("users")),
+    /** Why it is going back. Only meaningful alongside `needs_review`. */
+    note: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     const report = await ctx.db.get(args.reportId);
     if (report === null) throw new Error("That report no longer exists.");
 
+    const note = args.note?.trim();
+
     await ctx.db.patch(args.reportId, {
       status: args.status,
       reviewedAt: new Date().toISOString(),
       reviewedBy: args.reviewedBy,
+      reviewNote: note ? note : undefined,
     });
     return null;
   },

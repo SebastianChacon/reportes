@@ -1,10 +1,11 @@
 # Plan — La consola del PM
 
-> **Estado: aprobado. Paso A construido; B en adelante pendientes.**
+> **Estado: aprobado. Pasos A y B construidos; C en adelante pendientes.**
 > `PROMPT-UI-PM.md` prohíbe construir la superficie del PM antes de que Sebastian
 > apruebe un plan. Este es ese plan, y está aprobado.
 >
-> **Hecho:** el paso A — identidad del capataz. Ver la sección 2.
+> **Hecho:** el paso A — identidad del capataz (sección 2) — y el paso B, las
+> cinco queries de `convex/office.ts` (sección 5).
 > **Pendiente:** todo lo demás. Ninguna pantalla de `/office` existe todavía.
 
 Reconcilia la **Fase 3 (Admin v1)** de [PLAN.md](PLAN.md) con lo que el repo
@@ -29,8 +30,8 @@ Lo que ya resuelve, y que conviene no volver a discutir:
 - `reports.setStatus` ya existe, escrito y esperando. Le falta solo saber quién
   es el que aprueba.
 
-Lo que **no** existe todavía: **ni una sola query**. `convex/reports.ts` tiene
-tres mutations y ningún `query`. Toda lectura de la consola hay que escribirla.
+> **Actualizado.** Esto decía que no existía ni una sola query. Ya existen las
+> cinco: `convex/office.ts`. Lo que falta ahora es la UI que las lea.
 
 ---
 
@@ -162,19 +163,40 @@ ya construido, cuesta poco. Entra en v1.
 
 ---
 
-## 5. Las queries que hay que escribir
+## 5. Las queries — escritas
 
 Todas en `convex/office.ts`, todas `query`, ninguna toca `lib/calc.ts` en lectura:
 
 | Query | Sirve a | Índice |
 |---|---|---|
 | `dayBoard({ date })` | `/office` | `reports.by_date` |
-| `missingToday({ date })` | "Faltan por entregar" | `reports.by_date` + roster |
+| `missingToday({ date })` | "Faltan por entregar" | `reports.by_date` + `users` |
 | `report({ id })` | detalle | directo + `by_report` ×2 |
-| `search({ from, to, status, … })` | `/office/reportes` | `by_status_date` |
+| `search({ from, to, status, … })` | `/office/reportes` | `by_status_date` / `by_person_date` |
 | `personWeek({ personId, from, to })` | `/office/personas/[id]` | `by_person_date` |
 
-Y una mutation: `addReviewNote`, o `setStatus` extendida con la nota.
+La mutation quedó como `setStatus` extendida con `note`, no como una función
+aparte: el estado y el motivo se escriben juntos o el reporte queda devuelto sin
+decir por qué. La nota se **reemplaza**, no se acumula — aprobar sin nota la
+borra, porque una corrección ya hecha no debe seguir mostrándose como pendiente.
+
+Tres decisiones que el plan no había tomado y que el código tuvo que tomar:
+
+- **La aritmética no se rehace.** `convex/office.ts` no suma nada por su cuenta:
+  las reglas viven en `lib/summaries.ts`, sin un solo import de Convex, y se
+  prueban solas — igual que `lib/submission.ts` en el lado del teléfono.
+- **`search` tiene tope.** Un rango de fechas de un año es una consulta legal.
+  Escanea hasta 1.000 documentos y devuelve hasta 200, y avisa con `truncated`
+  en vez de recortar en silencio.
+- **Texto libre sigue afuera**, como decía la sección 9. El filtro de cliente es
+  subcadena; el de job # es exacto, porque un job # es un identificador y "2155"
+  es otro trabajo, no un prefijo de "21550".
+
+**El límite honesto de "Faltan por entregar":** solo puede faltar quien se
+enroló. Un capataz que nunca fijó su PIN no tiene cuenta, así que la lista no
+puede saber si trabajó y no mandó nada. Por eso la query también devuelve
+`unattributed` — reportes archivados sin capataz, que no sacan a nadie de la
+lista.
 
 ---
 
@@ -208,8 +230,8 @@ valor de tener consola: el PM abre el mail en la camioneta y toca.
 
 ```
 A  Identidad del capataz + auth      ✅ hecho
-B  Queries de Convex                 ← sigue: sin UI, testeables solas
-C  /office (el día) + detalle        ← el mínimo que sirve
+B  Queries de Convex                 ✅ hecho: sin UI, verificadas contra dev
+C  /office (el día) + detalle        ← sigue: el mínimo que sirve
 D  Buscar + persona/semana
 E  Email rediseñado con link
 F  Auditoría: web-design-guidelines, react-best-practices, npm test
@@ -219,12 +241,25 @@ F  Auditoría: web-design-guidelines, react-best-practices, npm test
 siempre. Resultó que la ventana estaba entera: no había ni un reporte archivado
 cuando se resolvió, así que no se perdió ninguna atribución.
 
+**B se verificó con datos, no solo con tipos.** Se enrolaron dos capataces en
+`dev:canny-dove-786`, se archivó un reporte de prueba a nombre de uno, se
+corrieron las cinco queries y la vuelta completa de `setStatus` con nota, y
+después se borró todo. "Faltan por entregar" nombró al que no mandó. El
+deployment quedó vacío otra vez.
+
 **Lo que bloquea a producción, y no es código.** El deployment de Convex es
 `dev:canny-dove-786` y en Vercel no está ni `NEXT_PUBLIC_CONVEX_URL` ni
 `AUTH_SECRET`. Mientras eso siga así, la app desplegada no archiva nada y no
-pregunta quién sos — sin error visible, por diseño. Escribir las queries de la
-consola contra una base en la que ningún teléfono escribe no tiene sentido, así
-que esto va antes que B.
+pregunta quién sos — sin error visible, por diseño.
+
+El plan ponía esto antes que B. B se hizo igual, y la razón es que no cambió
+nada: las queries se escriben y se prueban contra el deployment de desarrollo
+sin tocar producción. **Pero sí bloquea a C en adelante.** Una consola es una
+pantalla que un PM abre esperando ver el día de su gente; contra una base en la
+que ningún teléfono escribe, muestra cero reportes y cero capataces faltantes,
+que es exactamente lo que mostraría si todo funcionara y nadie hubiera trabajado.
+Eso no es una pantalla incompleta, es una pantalla que miente. Antes de C:
+`npx convex deploy`, y las dos variables en Vercel.
 
 **Falta también, y es de la oficina, no del capataz:** un capataz que olvide su
 PIN hoy solo se desbloquea desde el dashboard de Convex
