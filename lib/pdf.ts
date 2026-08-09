@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import { ROLE_CODES } from "./catalog";
-import { crewTotalHours, formatHours, formatMoney, materialsTotalCost, onSiteHours, totalDayHours, travelHours } from "./calc";
+import { crewTotalHours, formatHours, formatMoney, lunchMinutes, materialsTotalCost, onSiteHours, totalDayHours, travelHours } from "./calc";
 import { dayOfWeek, t } from "./i18n";
 import type { JobReport, Lang, L10n } from "./types";
 
@@ -264,6 +264,10 @@ export function buildPdf(r: JobReport, lang: Lang): jsPDF {
     { key: t("endYard", lang), value: r.endYard },
   ]);
   fieldRow(ctx, [
+    {
+      key: t("lunch", lang),
+      value: `${lunchMinutes(r)} ${t("minutesShort", lang)}`,
+    },
     { key: t("totalHours", lang), value: formatHours(totalDayHours(r)) },
     { key: t("onSiteHours", lang), value: formatHours(onSiteHours(r)) },
     { key: t("travelHours", lang), value: formatHours(travelHours(r)) },

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import type { JobReport, Lang } from "@/lib/types";
-import { formatHours, materialsTotalCost, onSiteHours, totalDayHours } from "@/lib/calc";
+import { formatHours, lunchMinutes, materialsTotalCost, onSiteHours, totalDayHours } from "@/lib/calc";
 import { dayOfWeek } from "@/lib/i18n";
 
 export const runtime = "nodejs";
@@ -93,6 +93,7 @@ function summaryHtml(r: JobReport, lang: Lang): string {
     ${row("Truck #", r.truckNumbers.join(", "))}
     ${row("Yard → Job", `${r.startYard || "—"} → ${r.startJob || "—"}`)}
     ${row("Job → Yard", `${r.endJob || "—"} → ${r.endYard || "—"}`)}
+    ${row("Lunch", `${lunchMinutes(r)} min`)}
   </table>
 
   <h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#18181b;border-bottom:1px solid #18181b;padding-bottom:4px">Description</h2>
@@ -218,6 +219,9 @@ export async function POST(request: Request) {
     startJob: str(rawReport.startJob),
     endJob: str(rawReport.endJob),
     endYard: str(rawReport.endYard),
+    // A report queued before lunch existed has no break at all — defaulting it
+    // to 30 here would shave half an hour off hours that were already agreed.
+    lunchMinutes: typeof rawReport.lunchMinutes === "number" ? rawReport.lunchMinutes : 0,
     notes: str(rawReport.notes),
     clientName: str(rawReport.clientName),
     jobNumbers: arr(rawReport.jobNumbers),

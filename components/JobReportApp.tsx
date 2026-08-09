@@ -20,7 +20,7 @@ import {
   type SaveResult,
 } from "@/lib/storage";
 import { emptyReport, type JobReport, type Lang } from "@/lib/types";
-import { missingRequired } from "@/lib/calc";
+import { missingRequired, timeErrors } from "@/lib/calc";
 import { stripDataUrlPrefix } from "@/lib/photos";
 import { mailtoUrl, REPORT_TO, shareReport } from "@/lib/share";
 import { LanguageToggle } from "./LanguageToggle";
@@ -234,7 +234,7 @@ export function JobReportApp() {
    * activation that `navigator.share` needs the moment anything is awaited.
    */
   const handleSend = () => {
-    if (missingRequired(report).length > 0) return;
+    if (missingRequired(report).length > 0 || timeErrors(report).length > 0) return;
     if (status === "sending") return;
     setFailure(null);
 
@@ -315,6 +315,10 @@ export function JobReportApp() {
 
   const progress = ((step + 1) / STEPS.length) * 100;
   const isLast = step === STEPS.length - 1;
+  // Times that contradict each other are the one thing the wizard refuses to
+  // carry forward: a wrong AM/PM silently doubles a payroll day, and by the
+  // review screen nobody remembers what the real times were.
+  const blockedOnTimes = step === 1 && timeErrors(report).length > 0;
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col">
@@ -439,7 +443,12 @@ export function JobReportApp() {
                 {t("back", lang)}
               </Button>
             )}
-            <Button variant="primary" onClick={() => goTo(step + 1)} className="flex-[2]">
+            <Button
+              variant="primary"
+              onClick={() => goTo(step + 1)}
+              disabled={blockedOnTimes}
+              className="flex-[2]"
+            >
               {t("next", lang)}
             </Button>
           </div>

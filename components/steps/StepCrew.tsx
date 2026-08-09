@@ -2,7 +2,7 @@
 
 import React from "react";
 import { CREW, CREW_GROUPS, ROLE_CODES } from "@/lib/catalog";
-import { crewTotalHours, formatHours } from "@/lib/calc";
+import { crewTotalHours, formatHours, suggestedCrewHours } from "@/lib/calc";
 import { t } from "@/lib/i18n";
 import { loadLastCrew } from "@/lib/storage";
 import type { CrewEntry, JobReport, Lang } from "@/lib/types";
@@ -18,12 +18,30 @@ export function StepCrew({
   lang: Lang;
   update: (patch: Partial<JobReport>) => void;
 }) {
-  const [bulkHours, setBulkHours] = React.useState<number | null>(null);
+  // What the day's times work out to — the hours almost everyone gets.
+  const suggested = suggestedCrewHours(report);
+
+  const [bulkHours, setBulkHours] = React.useState<number | null>(suggested);
+  // Once the foreman types his own number, the times stop overwriting it.
+  const [bulkEdited, setBulkEdited] = React.useState(false);
   const [lastCrew, setLastCrew] = React.useState<CrewEntry[]>([]);
 
   React.useEffect(() => {
     setLastCrew(loadLastCrew());
   }, []);
+
+  // Going back to fix a time should move the suggestion with it.
+  React.useEffect(() => {
+    if (!bulkEdited) setBulkHours(suggested);
+  }, [suggested, bulkEdited]);
+
+  const editBulkHours = (hours: number | null) => {
+    setBulkEdited(true);
+    setBulkHours(hours);
+  };
+
+  /** Hours a newly added person starts with. */
+  const defaultHours = bulkHours ?? suggested;
 
   const roleText = (roles: string[]) =>
     roles.map((c) => ROLE_CODES[c]?.[lang] ?? c).join(" · ");
@@ -45,7 +63,7 @@ export function StepCrew({
     update({
       crew: [
         ...report.crew,
-        { id: source.id, name: source.name, roles: source.roles, hours: bulkHours },
+        { id: source.id, name: source.name, roles: source.roles, hours: defaultHours },
       ],
     });
   };
@@ -53,7 +71,7 @@ export function StepCrew({
   const addCustom = (name: string) => {
     const id = `adhoc-${name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
     update({
-      crew: [...report.crew, { id, name, roles: [], hours: bulkHours, adhoc: true }],
+      crew: [...report.crew, { id, name, roles: [], hours: defaultHours, adhoc: true }],
     });
   };
 
@@ -71,8 +89,8 @@ export function StepCrew({
   };
 
   const reuseLastCrew = () => {
-    // Bring the people over, but not yesterday's hours.
-    update({ crew: lastCrew.map((c) => ({ ...c, hours: null })) });
+    // Bring the people over, but on today's hours — never yesterday's.
+    update({ crew: lastCrew.map((c) => ({ ...c, hours: defaultHours })) });
   };
 
   return (
@@ -107,24 +125,31 @@ export function StepCrew({
         ) : (
           <>
             {/* Every crew member usually works the same day — set it once. */}
-            <div className="mb-4 flex items-end gap-2 rounded-xl bg-[color:var(--surface-sunk)] p-3">
-              <div className="w-28 shrink-0">
-                <NumberField
-                  compact
-                  label={t("hours", lang)}
-                  placeholder={t("hrs", lang)}
-                  value={bulkHours}
-                  onChange={setBulkHours}
-                />
+            <div className="mb-4 rounded-xl bg-[color:var(--surface-sunk)] p-3">
+              <div className="flex items-end gap-2">
+                <div className="w-28 shrink-0">
+                  <NumberField
+                    compact
+                    label={t("hours", lang)}
+                    placeholder={t("hrs", lang)}
+                    value={bulkHours}
+                    onChange={editBulkHours}
+                  />
+                </div>
+                <Button
+                  variant="primary"
+                  onClick={applyToAll}
+                  disabled={bulkHours === null}
+                  className="flex-1"
+                >
+                  {t("applyToAll", lang)}
+                </Button>
               </div>
-              <Button
-                variant="primary"
-                onClick={applyToAll}
-                disabled={bulkHours === null}
-                className="flex-1"
-              >
-                {t("applyToAll", lang)}
-              </Button>
+              <p className="mt-2 text-xs text-[color:var(--ink-muted)]">
+                {suggested === null
+                  ? t("hoursNoTimes", lang)
+                  : t("hoursFromTimes", lang).replace("{n}", formatHours(suggested))}
+              </p>
             </div>
 
             <ul className="space-y-2">
