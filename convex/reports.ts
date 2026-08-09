@@ -18,6 +18,16 @@ export const submit = mutation({
     crewDays: v.array(v.object(submittedCrewDayFields)),
     /** Uploaded before this call, in the order the foreman took them. */
     photoStorageIds: v.array(v.id("_storage")),
+    /**
+     * Who filed it. Set only by the server route that files reports, which is
+     * the only thing that can read the session cookie — the phone never sends
+     * this, because a phone able to name the foreman could name anyone.
+     *
+     * Optional because a report filed before its foreman enrolled, or replayed
+     * from a history written by an older build, must still land. An unattributed
+     * report is worth more to the office than a lost one.
+     */
+    submittedBy: v.optional(v.id("users")),
   },
   returns: v.object({ reportId: v.id("reports"), duplicate: v.boolean() }),
   handler: async (ctx, args) => {
@@ -31,10 +41,21 @@ export const submit = mutation({
       // uploaded before we could know that, so drop them rather than leave
       // orphaned blobs nobody will ever read or pay attention to.
       await Promise.all(args.photoStorageIds.map((id) => ctx.storage.delete(id)));
+
+      // A report that landed before its foreman enrolled has no `submittedBy`,
+      // and it is the one field that cannot be reconstructed later. If a retry
+      // finally knows who filed it, take the answer.
+      if (existing.submittedBy === undefined && args.submittedBy !== undefined) {
+        await ctx.db.patch(existing._id, { submittedBy: args.submittedBy });
+      }
+
       return { reportId: existing._id, duplicate: true };
     }
 
-    const reportId = await ctx.db.insert("reports", args.report);
+    const reportId = await ctx.db.insert("reports", {
+      ...args.report,
+      submittedBy: args.submittedBy,
+    });
 
     // Fanned out in the same mutation as the report, so the two can never
     // disagree about who worked that day.

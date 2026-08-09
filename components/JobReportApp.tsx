@@ -29,6 +29,13 @@ import { emptyReport, type JobReport, type Lang } from "@/lib/types";
 import { missingRequired, timeErrors } from "@/lib/calc";
 import { stripDataUrlPrefix } from "@/lib/photos";
 import { fileWithOffice } from "@/lib/office";
+import {
+  loadSession,
+  signOut,
+  type PublicIdentity,
+  type SessionState,
+} from "@/lib/identity";
+import { IdentityGate } from "./IdentityGate";
 import { mailtoUrl, REPORT_TO, shareReport } from "@/lib/share";
 import { HistoryPanel } from "./HistoryPanel";
 import { LanguageToggle } from "./LanguageToggle";
@@ -124,6 +131,10 @@ export function JobReportApp() {
   const [online, setOnline] = React.useState(true);
   const [failure, setFailure] = React.useState<SendFailure | null>(null);
   const [draftWarning, setDraftWarning] = React.useState<SaveResult>("ok");
+  /** `null` until the server has been asked, and after a failed ask. */
+  const [session, setSession] = React.useState<SessionState | null>(null);
+  /** He chose to get on with the report. Asked again next launch, not this one. */
+  const [identitySkipped, setIdentitySkipped] = React.useState(false);
   const mainRef = React.useRef<HTMLElement>(null);
   const langRef = React.useRef(lang);
   langRef.current = lang;
@@ -142,6 +153,24 @@ export function JobReportApp() {
     setReport(draft ? { ...emptyReport(storedLang), ...draft } : emptyReport(storedLang));
     setHydrated(true);
   }, []);
+
+  /**
+   * Who is holding the phone.
+   *
+   * Off the critical path on purpose: the answer arrives whenever it arrives, and
+   * a failure to get one leaves `session` null, which shows no identity UI at all.
+   * The wizard behind this never waits on the network.
+   */
+  React.useEffect(() => {
+    if (!hydrated) return;
+    let live = true;
+    void loadSession().then((state) => {
+      if (live) setSession(state);
+    });
+    return () => {
+      live = false;
+    };
+  }, [hydrated]);
 
   /* ---- autosave: the phone dies, the report doesn't ---- */
   React.useEffect(() => {
@@ -405,6 +434,30 @@ export function JobReportApp() {
     );
   }
 
+  /**
+   * Asked before the first report, and only when there is something to ask.
+   *
+   * `session === null` means the server could not be reached, and
+   * `configured === false` means no `AUTH_SECRET` is set — in both cases the app
+   * behaves exactly as it did before any of this existed. That is what keeps a
+   * dead spot from turning into a blank screen in a truck.
+   */
+  const askWhoYouAre =
+    session !== null && session.configured && session.identity === null && !identitySkipped;
+
+  if (askWhoYouAre) {
+    return (
+      <IdentityGate
+        lang={lang}
+        online={online}
+        onIdentified={(identity: PublicIdentity) =>
+          setSession({ configured: true, identity })
+        }
+        onSkip={() => setIdentitySkipped(true)}
+      />
+    );
+  }
+
   if (done) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-5 px-5 text-center">
@@ -514,6 +567,41 @@ export function JobReportApp() {
             <p className="rounded-lg bg-[color:var(--accent-soft)] px-3 py-2 text-xs font-medium text-[color:var(--accent)]">
               {t("offline", lang)}
             </p>
+          </div>
+        )}
+
+        {/* Whose report this is. Absent entirely when there is no way to know. */}
+        {session?.configured && (
+          <div className="flex items-center justify-between gap-3 px-4 pb-2.5 text-xs">
+            {session.identity ? (
+              <>
+                <p className="min-w-0 truncate text-[color:var(--ink-muted)]">
+                  {t("signedInAs", lang)}{" "}
+                  <span className="font-semibold text-[color:var(--ink)]">
+                    {session.identity.name}
+                  </span>
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await signOut();
+                    setSession({ configured: true, identity: null });
+                    setIdentitySkipped(false);
+                  }}
+                  className="shrink-0 font-medium text-[color:var(--ink-muted)] underline decoration-[color:var(--line)] underline-offset-2"
+                >
+                  {t("handOverPhone", lang)}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIdentitySkipped(false)}
+                className="font-semibold text-[color:var(--accent)] underline decoration-[color:var(--accent-soft)] underline-offset-2"
+              >
+                {t("identifyNow", lang)}
+              </button>
+            )}
           </div>
         )}
 

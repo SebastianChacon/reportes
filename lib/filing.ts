@@ -75,14 +75,24 @@ export function convexUrl(): string | null {
 
 type ConvexLikeClient = { mutation(reference: unknown, args: unknown): Promise<unknown> };
 
+/** Where the report JSON goes. The route attaches who filed it. */
+export const FILE_REPORT_URL = "/api/reports";
+
 /**
+ * Photos go straight to Convex storage; the report goes through our own server.
+ *
+ * The split is not incidental. Photos are megabytes on a truck's data plan, so
+ * they take the short path — the phone asks Convex for a one-shot upload URL and
+ * POSTs the JPEG to it. The report is ~20 KB and needs one thing the phone cannot
+ * be trusted to supply: the foreman's identity. That lives in an httpOnly cookie
+ * only the server can read, so the report takes the long path and comes back
+ * stamped with `submittedBy`.
+ *
  * Built against string function references rather than `convex/_generated/api`,
- * so the app compiles and ships before anyone has run `npx convex dev`. The
- * generated types replace these once a deployment exists.
+ * so the phone's bundle never depends on generated code.
  */
 export function makeConvexBackend(client: ConvexLikeClient, refs: {
   uploadUrl: unknown;
-  submit: unknown;
 }): FilingBackend {
   return {
     async uploadPhoto(dataUrl) {
@@ -99,8 +109,16 @@ export function makeConvexBackend(client: ConvexLikeClient, refs: {
     },
 
     async submit(input) {
-      const result = (await client.mutation(refs.submit, input)) as { duplicate?: boolean };
-      return { duplicate: result?.duplicate === true };
+      const response = await fetch(FILE_REPORT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // The cookie is the whole point of this request going through our server.
+        credentials: "same-origin",
+        body: JSON.stringify(input),
+      });
+      if (!response.ok) throw new Error(`file_report_failed_${response.status}`);
+      const body = (await response.json()) as { duplicate?: boolean };
+      return { duplicate: body?.duplicate === true };
     },
   };
 }
