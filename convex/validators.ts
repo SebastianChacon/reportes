@@ -142,6 +142,53 @@ export const reportFields = {
   reviewedBy: v.optional(v.id("users")),
 };
 
+/* ------------------------------------------------------------------ */
+/* Accounts                                                            */
+/* ------------------------------------------------------------------ */
+
+export const userRole = v.union(
+  v.literal("foreman"),
+  v.literal("manager"),
+  v.literal("admin")
+);
+
+/**
+ * One account. A foreman is identified by his roster id and a 4-digit PIN; the
+ * office by an email and a real password. Both land in this table because what
+ * the reports point at is a `users` row, not a login mechanism.
+ *
+ * `pinHash` is PBKDF2-SHA256 and never leaves the deployment: the only functions
+ * that read it are internal, and the ones that verify it return an identity, not
+ * a hash.
+ */
+export const userFields = {
+  name: v.string(),
+  role: userRole,
+
+  /** The roster id from lib/catalog.ts. Absent only for an office-only account. */
+  crewMemberId: v.optional(v.string()),
+  /** Role codes copied from the roster at enrolment, for display in the console. */
+  roles: v.optional(v.array(v.string())),
+
+  /** Office accounts only. A foreman never has one. */
+  email: v.optional(v.string()),
+
+  pinHash: v.string(),
+  pinSalt: v.string(),
+
+  /**
+   * A 4-digit PIN is 10,000 guesses. Without a lockout that is a minute of
+   * scripting, so failures are counted and the account stops answering for a
+   * while — the one protection that actually matters at this key length.
+   */
+  failedAttempts: v.number(),
+  /** ISO timestamp. While it is in the future the PIN is refused outright. */
+  lockedUntil: v.optional(v.string()),
+
+  enrolledAt: v.string(),
+  lastSeenAt: v.optional(v.string()),
+};
+
 /** A crew row as the phone sends it — `reportId` is attached by the mutation. */
 export const submittedCrewDayFields = {
   /** Roster id. Null when the foreman wrote a name in that is not on the list. */

@@ -1,8 +1,11 @@
 # Plan — La consola del PM
 
-> **Estado: propuesta, esperando aprobación.** `PROMPT-UI-PM.md` prohíbe construir
-> la superficie del PM antes de que Sebastian apruebe un plan. Este es ese plan.
-> Nada de lo que está acá está implementado.
+> **Estado: aprobado. Paso A construido; B en adelante pendientes.**
+> `PROMPT-UI-PM.md` prohíbe construir la superficie del PM antes de que Sebastian
+> apruebe un plan. Este es ese plan, y está aprobado.
+>
+> **Hecho:** el paso A — identidad del capataz. Ver la sección 2.
+> **Pendiente:** todo lo demás. Ninguna pantalla de `/office` existe todavía.
 
 Reconcilia la **Fase 3 (Admin v1)** de [PLAN.md](PLAN.md) con lo que el repo
 realmente tiene hoy: Convex, no Neon + Drizzle.
@@ -31,7 +34,33 @@ tres mutations y ningún `query`. Toda lectura de la consola hay que escribirla.
 
 ---
 
-## 2. El hallazgo que ordena el resto
+## 2. El hallazgo que ordenó el resto — resuelto
+
+> **Cerrado.** `reports.submittedBy` ya se escribe. Lo que sigue queda como
+> registro de por qué esto fue primero, y de cómo terminó implementado.
+>
+> **Cómo quedó.** El capataz elige su nombre del roster y fija un PIN de 4
+> dígitos. El PIN se verifica **dentro de Convex** (`convex/auth.ts`, PBKDF2-SHA256,
+> 100k iteraciones, bloqueo de 15 min a los 5 intentos): el hash nunca sale del
+> deployment, porque las únicas funciones que lo leen son `internal` y no son
+> alcanzables desde afuera — verificado contra el deployment real.
+>
+> La identidad vive en una cookie httpOnly firmada (`jose`, HS256, 90 días). Por
+> eso **el reporte ahora se archiva a través de `POST /api/reports`** y no desde el
+> teléfono directo a Convex: la cookie solo la puede leer el servidor, así que el
+> servidor es lo único que puede poner `submittedBy`. Un teléfono que pudiera
+> nombrar al capataz podría nombrar a cualquiera.
+>
+> Las fotos **siguen yendo directo** del teléfono a Convex storage. Son megabytes
+> en el plan de datos de una camioneta y no tienen por qué pasar por una función
+> nuestra solo para ser reenviadas.
+>
+> Sin `AUTH_SECRET` nada de esto aparece: la app no pregunta quién sos y archiva
+> sin atribuir, igual que antes. Es el mismo trato que ya tiene con Resend y con
+> Convex, y está verificado corriendo el server sin la variable.
+>
+> Y el reporte que se archivó sin capataz **se rellena solo**: si un reintento del
+> outbox llega con cookie, `reports.submit` completa el `submittedBy` que faltaba.
 
 **Hoy un reporte no registra quién lo mandó.**
 
@@ -178,16 +207,29 @@ valor de tener consola: el PM abre el mail en la camioneta y toca.
 ## 8. Orden
 
 ```
-A  Identidad del capataz + auth      ← precondición, no mejora
-B  Queries de Convex                 ← sin UI, testeables solas
+A  Identidad del capataz + auth      ✅ hecho
+B  Queries de Convex                 ← sigue: sin UI, testeables solas
 C  /office (el día) + detalle        ← el mínimo que sirve
 D  Buscar + persona/semana
 E  Email rediseñado con link
 F  Auditoría: web-design-guidelines, react-best-practices, npm test
 ```
 
-**A antes que todo lo demás.** Cada día que pasa se archivan reportes sin
-capataz, y eso no se reconstruye.
+**A fue primero** porque cada reporte archivado sin capataz quedaba sin él para
+siempre. Resultó que la ventana estaba entera: no había ni un reporte archivado
+cuando se resolvió, así que no se perdió ninguna atribución.
+
+**Lo que bloquea a producción, y no es código.** El deployment de Convex es
+`dev:canny-dove-786` y en Vercel no está ni `NEXT_PUBLIC_CONVEX_URL` ni
+`AUTH_SECRET`. Mientras eso siga así, la app desplegada no archiva nada y no
+pregunta quién sos — sin error visible, por diseño. Escribir las queries de la
+consola contra una base en la que ningún teléfono escribe no tiene sentido, así
+que esto va antes que B.
+
+**Falta también, y es de la oficina, no del capataz:** un capataz que olvide su
+PIN hoy solo se desbloquea desde el dashboard de Convex
+(`auth:removeAccount`, interna a propósito). Cuando exista `/office`, eso
+necesita una pantalla.
 
 ---
 

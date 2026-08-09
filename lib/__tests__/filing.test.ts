@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fileReport, type FilingBackend } from "../filing";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FILE_REPORT_URL, fileReport, makeConvexBackend, type FilingBackend } from "../filing";
 import {
   loadHistory,
   loadUnfiledHistory,
@@ -131,6 +131,75 @@ describe("fileReport", () => {
     delete (legacy as { photos?: string[] }).photos;
 
     expect(await fileReport(legacy, backend)).toBe("filed");
+  });
+});
+
+describe("the Convex backend", () => {
+  const client = { mutation: vi.fn(async () => "https://upload.example/one-shot") };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    client.mutation.mockClear();
+  });
+
+  it("sends the report through our own server, with the cookie", async () => {
+    // This is the load-bearing assertion of the whole identity feature. The
+    // report must not go straight to Convex: only the server can read the
+    // httpOnly cookie, and therefore only the server can say who filed it. A
+    // phone allowed to name the foreman could name anyone.
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ ok: true, duplicate: false }),
+    })) as unknown as typeof fetch;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const backend = makeConvexBackend(client, { uploadUrl: "photos:generateUploadUrl" });
+    const input = { report: {}, crewDays: [], photoStorageIds: [] } as never;
+    expect(await backend.submit(input)).toEqual({ duplicate: false });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      FILE_REPORT_URL,
+      expect.objectContaining({ method: "POST", credentials: "same-origin" })
+    );
+    // Not a Convex mutation. The upload URL is the only thing that still is.
+    expect(client.mutation).not.toHaveBeenCalled();
+  });
+
+  it("reports an already-filed report as a duplicate, not a failure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, json: async () => ({ ok: true, duplicate: true }) }))
+    );
+
+    const backend = makeConvexBackend(client, { uploadUrl: "photos:generateUploadUrl" });
+    expect(await backend.submit({} as never)).toEqual({ duplicate: true });
+  });
+
+  it("throws on a rejected write, so the report stays in the history", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 502, json: async () => ({ ok: false }) }))
+    );
+
+    const backend = makeConvexBackend(client, { uploadUrl: "photos:generateUploadUrl" });
+    await expect(backend.submit({} as never)).rejects.toThrow("file_report_failed_502");
+  });
+
+  it("still uploads photos straight to Convex storage", async () => {
+    // Megabytes on a truck's data plan have no business round-tripping through a
+    // function of ours just to be forwarded.
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ storageId: "kg294cxhm8x0n49v29segksf8h8c425q" }),
+    })) as unknown as typeof fetch;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const backend = makeConvexBackend(client, { uploadUrl: "photos:generateUploadUrl" });
+    const id = await backend.uploadPhoto("data:image/jpeg;base64,AAAA");
+
+    expect(id).toBe("kg294cxhm8x0n49v29segksf8h8c425q");
+    expect(client.mutation).toHaveBeenCalledWith("photos:generateUploadUrl", {});
+    expect(fetchMock).toHaveBeenCalledWith("https://upload.example/one-shot", expect.anything());
   });
 });
 

@@ -1,6 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { crewDayFields, reportFields } from "./validators";
+import { crewDayFields, reportFields, userFields } from "./validators";
 
 export default defineSchema({
   reports: defineTable(reportFields)
@@ -28,11 +28,11 @@ export default defineSchema({
     order: v.number(),
   }).index("by_report", ["reportId"]),
 
-  users: defineTable({
-    email: v.string(),
-    name: v.string(),
-    role: v.union(v.literal("foreman"), v.literal("manager"), v.literal("admin")),
-    /** Links an office account back to the roster, so a foreman sees his own reports. */
-    crewMemberId: v.optional(v.string()),
-  }).index("by_email", ["email"]),
+  users: defineTable(userFields)
+    /**
+     * The roster id is the account's real name here — a foreman has no email,
+     * and asking for one at 6am in a truck is the whole thing this avoids.
+     */
+    .index("by_crew_member", ["crewMemberId"])
+    .index("by_email", ["email"]),
 });

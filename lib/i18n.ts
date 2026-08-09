@@ -270,6 +270,53 @@ export const UI = {
   confirm: { en: "Yes, delete", es: "Sí, borrar" },
   language: { en: "Language", es: "Idioma" },
   nothingHere: { en: "Nothing added", es: "Nada agregado" },
+
+  // Who is holding the phone. Asked once, then never again on this device.
+  whoAreYou: { en: "Who are you?", es: "¿Quién eres?" },
+  whoAreYouHint: {
+    en: "Pick your name once. This phone stays yours, and the office knows your reports are yours.",
+    es: "Elige tu nombre una vez. Este teléfono queda tuyo, y la oficina sabe que tus reportes son tuyos.",
+  },
+  foremenShortcut: { en: "Foremen", es: "Capataces" },
+  findYourName: { en: "Or search the roster", es: "O busca en la lista" },
+  findYourNamePlaceholder: { en: "Type your last name", es: "Escribe tu apellido" },
+  noNameFound: { en: "No one by that name", es: "Nadie con ese nombre" },
+  choosePin: { en: "Choose a 4-digit PIN", es: "Elige un PIN de 4 dígitos" },
+  choosePinHint: {
+    en: "You will type it on this phone. Pick something you will not forget.",
+    es: "Lo escribirás en este teléfono. Elige algo que no vayas a olvidar.",
+  },
+  enterPin: { en: "Enter your PIN", es: "Ingresa tu PIN" },
+  enterPinHint: {
+    en: "The four digits you chose the first time.",
+    es: "Los cuatro dígitos que elegiste la primera vez",
+  },
+  notYou: { en: "Not you? Pick again", es: "¿No eres tú? Elige otra vez" },
+  pinWrong: { en: "That PIN is not right", es: "Ese PIN no es correcto" },
+  pinLocked: {
+    en: "Too many tries. Try again in {n} min.",
+    es: "Demasiados intentos. Intenta en {n} min.",
+  },
+  pinTaken: {
+    en: "This name already has a PIN — enter it instead.",
+    es: "Este nombre ya tiene un PIN — ingrésalo.",
+  },
+  pinNeedsSignal: {
+    en: "This one step needs signal. You can fill the report now and do it later.",
+    es: "Este paso necesita señal. Puedes llenar el reporte ahora y hacerlo después.",
+  },
+  identifyLater: { en: "Not now", es: "Ahora no" },
+  identifyLaterHint: {
+    en: "The report still sends. The office just will not know it was you.",
+    es: "El reporte igual se envía. La oficina simplemente no sabrá que fuiste tú.",
+  },
+  identifyNow: { en: "Say who you are", es: "Di quién eres" },
+  signedInAs: { en: "Reporting as", es: "Reportando como" },
+  // Short on purpose: it shares a 375px row with the foreman's own name, and the
+  // name is the part he needs to be able to read.
+  handOverPhone: { en: "Not me", es: "No soy yo" },
+  pinClear: { en: "Clear", es: "Borrar" },
+  pinDelete: { en: "Delete last digit", es: "Borrar último dígito" },
 } as const;
 
 export type UIKey = keyof typeof UI;
