@@ -107,6 +107,14 @@ input[type="number"]::-webkit-inner-spin-button {
   @apply field-focus;
 }
 
+/* A time that contradicts another one — has to be obvious at arm's length,
+ * on a phone, in the sun, so it is border + tint, not just a red outline. */
+.field-error,
+.field-error:focus {
+  border-color: var(--color-clay-600);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-clay-600) 16%, transparent);
+}
+
 .card {
   background: var(--surface-raised);
   border: 1px solid var(--line);

@@ -5,9 +5,11 @@ import {
   crewTotalHours,
   formatHours,
   formatMoney,
+  lunchMinutes,
   materialsTotalCost,
   missingRequired,
   onSiteHours,
+  timeErrors,
   totalDayHours,
   warnings,
 } from "@/lib/calc";
@@ -57,6 +59,9 @@ export function StepReview({
   const missing = missingRequired(report);
   const warns = warnings(report);
   const total = materialsTotalCost(report);
+  const badTimes = timeErrors(report);
+  const lunch = lunchMinutes(report);
+  const blocked = missing.length > 0 || badTimes.length > 0;
 
   const missingLabel = (key: string) => {
     const map: Record<string, UIKey> = {
@@ -83,6 +88,21 @@ export function StepReview({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {badTimes.length > 0 && (
+        <div className="rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] bg-[color:var(--surface-raised)] p-4">
+          <p className="text-sm font-bold text-[color:var(--color-clay-600)]">
+            {t("timesFixFirst", lang)}
+          </p>
+          <Button
+            variant="ghost"
+            onClick={() => onEditStep(1)}
+            className="mt-1 !min-h-9 !px-0 !text-xs"
+          >
+            {t("edit", lang)} — {t("stepTimes", lang)}
+          </Button>
         </div>
       )}
 
@@ -128,6 +148,10 @@ export function StepReview({
         <Line k={t("endJob", lang)} v={report.endJob} />
         <Line k={t("endYard", lang)} v={report.endYard} />
         <div className="mt-2 border-t border-[color:var(--line)] pt-2">
+          <Line
+            k={t("lunch", lang)}
+            v={`${lunch} ${t("minutesShort", lang)}`}
+          />
           <Line k={t("totalHours", lang)} v={formatHours(totalDayHours(report))} />
           <Line k={t("onSiteHours", lang)} v={formatHours(onSiteHours(report))} />
         </div>
@@ -301,7 +325,7 @@ export function StepReview({
         <Button
           variant="primary"
           full
-          disabled={missing.length > 0 || status === "sending"}
+          disabled={blocked || status === "sending"}
           onClick={onSend}
         >
           {status === "sending" ? t("sending", lang) : t("send", lang)}
@@ -309,7 +333,7 @@ export function StepReview({
         <p className="text-center text-xs text-[color:var(--ink-muted)]">
           {t("sendShareHint", lang).replace("{to}", shareTo)}
         </p>
-        <Button full onClick={onDownload} disabled={missing.length > 0}>
+        <Button full onClick={onDownload} disabled={blocked}>
           {t("downloadPdf", lang)}
         </Button>
       </div>

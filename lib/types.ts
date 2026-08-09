@@ -99,6 +99,8 @@ export type JobReport = {
   startJob: string;
   endJob: string;
   endYard: string;
+  /** Unpaid break taken out of the day. 30 unless the foreman changes it. */
+  lunchMinutes: number;
 
   crew: CrewEntry[];
   description: Description;
@@ -150,6 +152,7 @@ export function emptyReport(lang: Lang): JobReport {
     startJob: "",
     endJob: "",
     endYard: "",
+    lunchMinutes: 30,
     crew: [],
     description: emptyDescription(lang),
     photos: [],

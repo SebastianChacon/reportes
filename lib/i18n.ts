@@ -45,6 +45,27 @@ export const UI = {
   totalHours: { en: "Total hours", es: "Horas totales" },
   onSiteHours: { en: "Hours on site", es: "Horas en el sitio" },
   travelHours: { en: "Travel", es: "Traslado" },
+  now: { en: "Now", es: "Ahora" },
+  lunch: { en: "Lunch", es: "Almuerzo" },
+  lunchHint: {
+    en: "Taken out of the day. Set it to 0 if the crew did not stop.",
+    es: "Se descuenta del día. Ponlo en 0 si la cuadrilla no paró.",
+  },
+  minutesShort: { en: "min", es: "min" },
+  timesEmpty: {
+    en: "Fill in the four times and the hours are worked out for you.",
+    es: "Llena los cuatro horarios y las horas se calculan solas.",
+  },
+  timesFixFirst: {
+    en: "Fix the times marked in red to continue",
+    es: "Corrige los horarios marcados en rojo para continuar",
+  },
+
+  // Times that contradict each other — {prev} is the checkpoint before them.
+  errNotBefore: {
+    en: "Cannot be earlier than “{prev}”",
+    es: "No puede ser antes de «{prev}»",
+  },
 
   // Step 3 — crew
   crewSearch: { en: "Search for a person…", es: "Buscar una persona…" },
@@ -62,6 +83,14 @@ export const UI = {
   noResults: { en: "No results", es: "Sin resultados" },
   addAsNew: { en: "Add", es: "Agregar" },
   crewTotal: { en: "Total crew hours", es: "Horas totales de la cuadrilla" },
+  hoursFromTimes: {
+    en: "{n} hrs from today's times — change it for anyone who worked different hours",
+    es: "{n} hrs según los horarios de hoy — cámbialo para quien trabajó distinto",
+  },
+  hoursNoTimes: {
+    en: "Fill in the times first and these come pre-filled",
+    es: "Llena primero los horarios y estas horas se ponen solas",
+  },
   useYesterday: { en: "Same crew as last report", es: "Misma cuadrilla del último reporte" },
 
   // Step 4 — description
@@ -196,7 +225,6 @@ export const UI = {
   required: { en: "Required", es: "Obligatorio" },
   missingFields: { en: "Fill these in first:", es: "Llena esto primero:" },
   warnLongDay: { en: "That's more than 16 hours — is it right?", es: "Son más de 16 horas — ¿está bien?" },
-  warnEndBeforeStart: { en: "The end time is before the start time", es: "La hora de fin es antes de la de inicio" },
   warnNoCrew: { en: "No crew members added", es: "No agregaste a nadie" },
   warnNoHours: { en: "Some people have no hours", es: "Algunas personas no tienen horas" },
 

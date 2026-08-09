@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { nowTimeValue } from "@/lib/calc";
 
 /* ------------------------------------------------------------------ */
 /* Labeled inputs                                                      */
@@ -54,20 +55,58 @@ export function TimeField({
   label,
   value,
   onChange,
-}: BaseProps & { value: string; onChange: (v: string) => void }) {
+  error,
+  nowLabel,
+}: BaseProps & {
+  value: string;
+  onChange: (v: string) => void;
+  /** Message shown in red under the field; also marks the input invalid. */
+  error?: string;
+  /** When given, shows a one-tap button that stamps the current time. */
+  nowLabel?: string;
+}) {
   const id = React.useId();
+  const errorId = `${id}-error`;
   return (
     <div>
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
         {label}
       </label>
-      <input
-        id={id}
-        className="field"
-        type="time"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      {/* The shortcut sits beside the control, not beside the label: at 375px
+          a label long enough to wrap would otherwise read straight through it
+          ("Salida del — Ahora — patio"). */}
+      <div className="flex items-center gap-1.5">
+        <input
+          id={id}
+          className={`field${error ? " field-error" : ""}`}
+          type="time"
+          // 5-minute marks: the phone's wheel is far quicker to spin than 60
+          // positions, and nobody logs a yard departure to the minute.
+          step={300}
+          value={value}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {nowLabel && (
+          <button
+            type="button"
+            onClick={() => onChange(nowTimeValue())}
+            className="min-h-11 shrink-0 rounded-lg border-[1.5px] border-[color:var(--line)] px-2 text-xs font-semibold text-[color:var(--accent)] active:bg-[color:var(--accent-soft)]"
+          >
+            {nowLabel}
+          </button>
+        )}
+      </div>
+      {error && (
+        <p
+          id={errorId}
+          role="alert"
+          className="mt-1.5 text-xs font-medium text-[color:var(--color-clay-600)]"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
