@@ -46,6 +46,12 @@ describe("shareBody", () => {
     expect(body).not.toMatch(/\n\n\n/);
   });
 
+  it("carries the recipient, which the share sheet itself cannot prefill", () => {
+    // Without this the foreman reads "send it to Esantander@…" on screen and
+    // then has to type it from memory into Gmail, every single day.
+    expect(shareBody(report(), "es")).toContain(`Para: ${REPORT_TO}`);
+  });
+
   it("mentions the photo count only when photos are attached", () => {
     expect(shareBody(report(), "es")).not.toContain("foto(s)");
     expect(shareBody(report({ photos: ["data:image/jpeg;base64,AAAA"] }), "es")).toContain(
