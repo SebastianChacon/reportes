@@ -38,3 +38,18 @@ export function readPhotoAsDataUrl(file: File): Promise<string> {
 export function stripDataUrlPrefix(dataUrl: string): string {
   return dataUrl.slice(dataUrl.indexOf(",") + 1);
 }
+
+/**
+ * Decoded by hand rather than through `fetch(dataUrl)`, because the share sheet
+ * has to be handed its files inside the click handler: iOS Safari drops the
+ * user activation `navigator.share` requires as soon as you await anything.
+ */
+export function dataUrlToBlob(dataUrl: string): Blob {
+  const comma = dataUrl.indexOf(",");
+  const header = dataUrl.slice(0, comma);
+  const mime = /:(.*?);/.exec(header)?.[1] ?? "image/jpeg";
+  const binary = atob(dataUrl.slice(comma + 1));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}

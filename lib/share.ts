@@ -1,25 +1,11 @@
 import { buildPdf, pdfFileName } from "./pdf";
+import { dataUrlToBlob } from "./photos";
 import { dayOfWeek } from "./i18n";
 import type { JobReport, Lang } from "./types";
 
 /** Where the report goes. Overridable per deployment without touching code. */
 export const REPORT_TO =
   process.env.NEXT_PUBLIC_REPORT_TO_EMAIL?.trim() || "Esantander@backtonature.net";
-
-/**
- * Decoded by hand rather than through `fetch(dataUrl)`, because the whole share
- * has to happen inside the click handler: iOS Safari drops the user-activation
- * that `navigator.share` requires as soon as you await anything.
- */
-function dataUrlToBlob(dataUrl: string): Blob {
-  const comma = dataUrl.indexOf(",");
-  const header = dataUrl.slice(0, comma);
-  const mime = /:(.*?);/.exec(header)?.[1] ?? "image/jpeg";
-  const binary = atob(dataUrl.slice(comma + 1));
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
 
 /** The PDF plus every photo, as files the OS share sheet can hand to Gmail or WhatsApp. */
 export function buildReportFiles(report: JobReport, lang: Lang): File[] {

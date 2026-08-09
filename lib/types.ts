@@ -87,6 +87,15 @@ export type Description = {
 };
 
 export type JobReport = {
+  /**
+   * Identifies this report across every copy of it — the live draft, the queued
+   * outbox entry, and the row the office ends up with. It is what stops a retry
+   * on flaky signal from filing the same day twice.
+   *
+   * Optional because reports queued by a build that predates it must still
+   * replay; `submissionKey()` derives a stable fallback for those.
+   */
+  id?: string;
   formVersion: string;
   filledInLang: Lang;
 
@@ -135,6 +144,13 @@ export function emptyDescription(lang: Lang): Description {
   };
 }
 
+/** `crypto.randomUUID` is unavailable on http:// origins, which the yard's test builds use. */
+function newReportId(): string {
+  const uuid = globalThis.crypto?.randomUUID;
+  if (typeof uuid === "function") return globalThis.crypto.randomUUID();
+  return `r-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function emptyReport(lang: Lang): JobReport {
   const today = new Date();
   const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
@@ -142,6 +158,7 @@ export function emptyReport(lang: Lang): JobReport {
   ).padStart(2, "0")}`;
 
   return {
+    id: newReportId(),
     formVersion: "YW 6/5/26",
     filledInLang: lang,
     date: iso,
