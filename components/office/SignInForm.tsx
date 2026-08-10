@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { tc, tcf } from "@/lib/i18n";
 
 type Refusal = "bad_credentials" | "locked" | "not_office" | "unreachable" | "unconfigured";
@@ -53,7 +54,8 @@ export function SignInForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md items-center px-5 py-10">
+    // A column, not a row: the way back sits under the form rather than beside it.
+    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-10">
       <form onSubmit={submit} className="card w-full p-6">
         <h1 className="text-lg font-bold tracking-tight">{tc("signInTitle")}</h1>
         <p className="mt-1 text-sm text-[color:var(--ink-muted)]">{tc("signInHint")}</p>
@@ -112,6 +114,19 @@ export function SignInForm() {
           {busy ? tc("signingIn") : tc("signIn")}
         </button>
       </form>
+
+      {/* The way out for someone who arrived here and is not the person with
+          the password — a foreman following a link, most often. The overview is
+          the only page in the product that is not behind one door or the
+          other. */}
+      <p className="mt-5 text-center text-sm">
+        <Link
+          href="/inicio"
+          className="text-[color:var(--ink-muted)] underline decoration-[color:var(--line)] underline-offset-4 hover:text-[color:var(--ink)]"
+        >
+          {tc("backToOverview")}
+        </Link>
+      </p>
     </div>
   );
 }
