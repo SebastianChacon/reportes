@@ -1,12 +1,13 @@
 # Plan — La consola del PM
 
-> **Estado: aprobado. Pasos A y B construidos; C en adelante pendientes.**
+> **Estado: aprobado. Pasos A, B y C construidos; D en adelante pendientes.**
 > `PROMPT-UI-PM.md` prohíbe construir la superficie del PM antes de que Sebastian
 > apruebe un plan. Este es ese plan, y está aprobado.
 >
-> **Hecho:** el paso A — identidad del capataz (sección 2) — y el paso B, las
-> cinco queries de `convex/office.ts` (sección 5).
-> **Pendiente:** todo lo demás. Ninguna pantalla de `/office` existe todavía.
+> **Hecho:** el paso A — identidad del capataz (sección 2) —, el paso B — las
+> cinco queries de `convex/office.ts` (sección 5) — y el paso C: `/office` y
+> `/office/reportes/[id]`, con la puerta de la oficina que faltaba.
+> **Pendiente:** D (buscar + persona/semana), E (email) y F (auditoría).
 
 Reconcilia la **Fase 3 (Admin v1)** de [PLAN.md](PLAN.md) con lo que el repo
 realmente tiene hoy: Convex, no Neon + Drizzle.
@@ -31,7 +32,9 @@ Lo que ya resuelve, y que conviene no volver a discutir:
   es el que aprueba.
 
 > **Actualizado.** Esto decía que no existía ni una sola query. Ya existen las
-> cinco: `convex/office.ts`. Lo que falta ahora es la UI que las lea.
+> cinco: `convex/office.ts`. Tres de ellas —`dayBoard`, `missingToday` y
+> `report`— ya las lee una pantalla. `search` y `personWeek` siguen sin lector
+> hasta el paso D.
 
 ---
 
@@ -87,7 +90,29 @@ reconstruir después.
 
 ---
 
-## 3. Autenticación — decidido
+## 3. Autenticación — decidido, y ahora construido de los dos lados
+
+> **Actualizado en C.** El paso A construyó solo la mitad del capataz. La mitad
+> de la oficina —correo, contraseña real, sesión de 12 h— se construyó junto con
+> las pantallas, porque sin ella `/office` se habría desplegado abierto: cualquiera
+> con la URL vería todos los reportes de la compañía y podría aprobarlos.
+>
+> **Cómo quedó.** `auth:signInOffice` verifica la contraseña dentro de Convex con
+> el mismo PBKDF2 de 100k iteraciones y el mismo bloqueo de 15 minutos que el PIN.
+> La puerta vive en `lib/officeSession.ts` y la aplica el layout de
+> `app/office/(console)/`, no cada página: una ruta nueva bajo esa carpeta queda
+> protegida por existir, y la pantalla de entrada está fuera del grupo justamente
+> para no tener que abrirle una excepción a la puerta.
+>
+> **No hay alta pública de cuentas de oficina, y es deliberado.** El auto-enrolamiento
+> es correcto para un capataz —su nombre ya está en el roster y lo peor que puede
+> hacer es reportar como sí mismo— y es incorrecto para una cuenta que aprueba
+> trabajo. Se crean desde un CLI autenticado, el mismo nivel donde ya vivía
+> `auth:removeAccount`:
+>
+> ```
+> npx convex run auth:createOfficeAccount '{"email":"…","name":"…","password":"…","role":"admin"}'
+> ```
 
 Se toma la recomendación de `PLAN.md`, sin cambios:
 
@@ -130,6 +155,19 @@ antes de que nadie lo abra.
 *Índice:* `reports.by_date`. Un solo `withIndex`.
 
 ### `/office/reportes/[id]` — El reporte
+
+> **Construido, con dos ausencias que conviene dejar dichas.**
+>
+> **Las firmas no existen en la consola, y no es un olvido: nunca llegan a la
+> base.** `lib/types.ts:130` las lleva en el teléfono, pero no están en
+> `submittedReportFields`, así que viven solo dentro del PDF que el capataz mandó.
+> Dibujar una caja de firma vacía diría que nadie firmó, que es falso. Meterlas
+> es una decisión de esquema aparte — dos data-URL PNG por reporte — y no se tomó
+> aquí.
+>
+> **Descargar PDF y reenviar por correo quedaron para el paso E**, que es donde
+> se rehace el email y donde nace el link al reporte que hace que un reenvío
+> valga algo.
 
 Completo, en el mismo orden que el papel, con firmas y fotos. Acciones:
 **Aprobar** · **Devolver con nota** · Descargar PDF · Reenviar por correo.
@@ -200,7 +238,15 @@ lista.
 
 ---
 
-## 6. Idioma
+## 6. Idioma — construido
+
+> **Hecho tal cual.** `CONSOLE` vive en `lib/i18n.ts` junto a `UI` pero separado,
+> con `tc()` y `tcf()` para los strings con `{n}`. Ni un string en JSX. El idioma
+> es una constante, `CONSOLE_LANG`, así que cambiarlo es una línea y no una
+> reescritura. El `lang="en"` va en un envoltorio de `app/office/layout.tsx`, no
+> en `<html>`, porque el layout raíz declara `es` para el asistente de campo — que
+> es el HTML correcto para un subárbol en otro idioma, y lo que un lector de
+> pantalla necesita para cambiar de voz en el lugar justo.
 
 **La consola arranca en inglés.** Todo string va a `lib/i18n.ts` en los dos
 idiomas igual, en un objeto `CONSOLE` separado de `UI` — `UI` ya tiene 292 líneas
@@ -231,11 +277,22 @@ valor de tener consola: el PM abre el mail en la camioneta y toca.
 ```
 A  Identidad del capataz + auth      ✅ hecho
 B  Queries de Convex                 ✅ hecho: sin UI, verificadas contra dev
-C  /office (el día) + detalle        ← sigue: el mínimo que sirve
-D  Buscar + persona/semana
+C  /office (el día) + detalle        ✅ hecho: contra dev, con datos sembrados
+D  Buscar + persona/semana           ← sigue
 E  Email rediseñado con link
 F  Auditoría: web-design-guidelines, react-best-practices, npm test
 ```
+
+**C se construyó contra `dev`, no contra producción, y el bloqueo de abajo sigue
+en pie.** El plan decía que producción bloqueaba a C. Bloquea a *desplegar* C, no
+a escribirlo: es el mismo argumento que dejó pasar a B. Se sembraron tres
+reportes de un día real en `dev:canny-dove-786` —dos con capataz, uno sin— y se
+verificó la vuelta completa contra ellos: entrar, leer el día, abrir un reporte,
+devolverlo con nota, y aprobarlo (lo que borra la nota, como manda la sección 5).
+`reviewedBy` quedó escrito con el nombre que salió de la cookie, no de la página.
+
+Lo que queda por verificar contra producción es exactamente lo que producción
+tiene y `dev` no: nada, hasta que exista.
 
 **A fue primero** porque cada reporte archivado sin capataz quedaba sin él para
 siempre. Resultó que la ventana estaba entera: no había ni un reporte archivado
@@ -254,12 +311,30 @@ pregunta quién sos — sin error visible, por diseño.
 
 El plan ponía esto antes que B. B se hizo igual, y la razón es que no cambió
 nada: las queries se escriben y se prueban contra el deployment de desarrollo
-sin tocar producción. **Pero sí bloquea a C en adelante.** Una consola es una
-pantalla que un PM abre esperando ver el día de su gente; contra una base en la
-que ningún teléfono escribe, muestra cero reportes y cero capataces faltantes,
-que es exactamente lo que mostraría si todo funcionara y nadie hubiera trabajado.
-Eso no es una pantalla incompleta, es una pantalla que miente. Antes de C:
-`npx convex deploy`, y las dos variables en Vercel.
+sin tocar producción. C se hizo por la misma razón.
+
+**Lo que bloquea es el despliegue, no la escritura.** Una consola es una pantalla
+que un PM abre esperando ver el día de su gente; contra una base en la que ningún
+teléfono escribe, muestra cero reportes y cero capataces faltantes, que es
+exactamente lo que mostraría si todo funcionara y nadie hubiera trabajado. Eso no
+es una pantalla incompleta, es una pantalla que miente.
+
+> **Actualizado en C: ya no miente.** La consola ahora comprueba las dos
+> variables y, si falta alguna, lo dice y las nombra en pantalla en vez de
+> dibujar un día vacío (`lib/officeSession.ts`, `components/office/Unconfigured.tsx`).
+> Eso quita el peligro, no el trabajo: sigue sin haber deployment de producción.
+
+Antes de que la consola sirva para algo desplegada, hacen falta tres órdenes, y
+ninguna es código:
+
+```
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+npx convex deploy
+vercel env add NEXT_PUBLIC_CONVEX_URL production && vercel env add AUTH_SECRET production
+```
+
+Y después, una cuenta de oficina en el deployment de producción — ver la
+sección 3. Sin ella no hay quien entre.
 
 **Falta también, y es de la oficina, no del capataz:** un capataz que olvide su
 PIN hoy solo se desbloquea desde el dashboard de Convex

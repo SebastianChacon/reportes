@@ -325,6 +325,245 @@ export function t(key: UIKey, lang: Lang): string {
   return UI[key][lang];
 }
 
+/* ------------------------------------------------------------------ */
+/* The office console                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Kept apart from `UI` on purpose. These are two vocabularies, not one: `UI`
+ * talks to a foreman in a truck ("Left the yard", "Sign with your finger") and
+ * this talks to a project manager at a desk about the same day afterwards.
+ * Merging them would mean one 600-line object where half the keys are wrong for
+ * whichever screen you are reading.
+ *
+ * Both languages are written for every string, exactly as the brief requires —
+ * what defaults to English is the console, not the file. See `CONSOLE_LANG`.
+ */
+export const CONSOLE = {
+  // Shell
+  office: { en: "Office", es: "Oficina" },
+  company: { en: "Back to Nature", es: "Back to Nature" },
+  signOut: { en: "Sign out", es: "Salir" },
+  signedInAs: { en: "Signed in as", es: "Conectado como" },
+
+  // Sign in
+  signInTitle: { en: "Office sign in", es: "Entrar a la oficina" },
+  signInHint: {
+    en: "This console shows every report the crews have filed.",
+    es: "Esta consola muestra todos los reportes que enviaron las cuadrillas.",
+  },
+  email: { en: "Email", es: "Correo" },
+  password: { en: "Password", es: "Contraseña" },
+  signIn: { en: "Sign in", es: "Entrar" },
+  signingIn: { en: "Signing in…", es: "Entrando…" },
+  signInBad: {
+    en: "That email and password do not match an account.",
+    es: "Ese correo y contraseña no corresponden a ninguna cuenta.",
+  },
+  signInLocked: {
+    en: "Too many attempts. Try again in {n} min.",
+    es: "Demasiados intentos. Intenta en {n} min.",
+  },
+  signInUnreachable: {
+    en: "Could not reach the server. Check your connection and try again.",
+    es: "No se pudo contactar al servidor. Revisa tu conexión e intenta de nuevo.",
+  },
+  signInUnconfigured: {
+    en: "Sign-in is not set up on this server yet, so the console cannot be opened.",
+    es: "El inicio de sesión todavía no está configurado en este servidor, así que la consola no se puede abrir.",
+  },
+
+  // The day
+  theDay: { en: "The day", es: "El día" },
+  today: { en: "Today", es: "Hoy" },
+  previousDay: { en: "Previous day", es: "Día anterior" },
+  nextDay: { en: "Next day", es: "Día siguiente" },
+  backToToday: { en: "Back to today", es: "Volver a hoy" },
+
+  // The four numbers
+  reportsReceived: { en: "Reports in", es: "Reportes recibidos" },
+  peopleOnSite: { en: "People out", es: "Personas en calle" },
+  labourHours: { en: "Labour hours", es: "Horas de mano de obra" },
+  materialsSpend: { en: "Materials", es: "Materiales" },
+
+  // Missing today — the screen the console exists for
+  missingTitle: { en: "Not filed yet", es: "Faltan por entregar" },
+  missingHint: {
+    en: "Foremen with an account who have not filed anything for this day.",
+    es: "Capataces con cuenta que no han enviado nada para este día.",
+  },
+  missingNone: {
+    en: "Everyone with an account has filed.",
+    es: "Todos los que tienen cuenta ya enviaron.",
+  },
+  missingNobodyEnrolled: {
+    en: "Nobody has set up an account yet, so there is no one this can name.",
+    es: "Nadie ha creado una cuenta todavía, así que no hay a quién nombrar.",
+  },
+  // The honest limit, stated on the screen rather than buried in a plan.
+  unattributedNoteOne: {
+    en: "One report arrived without a foreman, so it clears nobody from this list.",
+    es: "Un reporte llegó sin capataz, así que no saca a nadie de esta lista.",
+  },
+  unattributedNoteMany: {
+    en: "{n} reports arrived without a foreman, so they clear nobody from this list.",
+    es: "{n} reportes llegaron sin capataz, así que no sacan a nadie de esta lista.",
+  },
+  enrolledCount: {
+    en: "{filed} of {enrolled} filed",
+    es: "{filed} de {enrolled} enviaron",
+  },
+
+  // The list
+  reports: { en: "Reports", es: "Reportes" },
+  noReports: {
+    en: "No reports for this day yet.",
+    es: "Todavía no hay reportes para este día.",
+  },
+  noReportsHint: {
+    en: "They arrive as the crews finish. Check a previous day, or come back later.",
+    es: "Llegan conforme las cuadrillas terminan. Revisa un día anterior, o vuelve más tarde.",
+  },
+  unattributed: { en: "No foreman", es: "Sin capataz" },
+  jobShort: { en: "Job", es: "Trabajo" },
+  people: { en: "people", es: "personas" },
+  hours: { en: "hrs", es: "hrs" },
+  photos: { en: "photos", es: "fotos" },
+
+  // Status
+  statusSubmitted: { en: "New", es: "Nuevo" },
+  statusNeedsReview: { en: "Sent back", es: "Devuelto" },
+  statusApproved: { en: "Approved", es: "Aprobado" },
+
+  // Flags, as the office reads them — shorter and blunter than the phone's
+  // version, because here they are a reason to open a report, not advice.
+  flagLongDay: { en: "Over 16 hours", es: "Más de 16 horas" },
+  flagNoCrew: { en: "No crew", es: "Sin cuadrilla" },
+  flagNoHours: { en: "Missing hours", es: "Faltan horas" },
+
+  // One report
+  reportTitle: { en: "Report", es: "Reporte" },
+  backToDay: { en: "Back to the day", es: "Volver al día" },
+  notFound: { en: "That report is not here.", es: "Ese reporte no está." },
+  notFoundHint: {
+    en: "It may have been deleted, or the link may be wrong.",
+    es: "Puede que se haya borrado, o que el link esté mal.",
+  },
+  filedBy: { en: "Filed by", es: "Enviado por" },
+  filedAt: { en: "Filed", es: "Enviado" },
+  reviewedBy: { en: "Reviewed by", es: "Revisado por" },
+
+  sectionJob: { en: "Job", es: "Trabajo" },
+  sectionTimes: { en: "Times", es: "Horarios" },
+  sectionCrew: { en: "Crew", es: "Cuadrilla" },
+  sectionWork: { en: "Work done", es: "Trabajo hecho" },
+  sectionMaterials: { en: "Materials & resources", es: "Materiales y recursos" },
+  sectionPhotos: { en: "Photos", es: "Fotos" },
+
+  client: { en: "Client", es: "Cliente" },
+  jobNumbers: { en: "Job numbers", es: "Números de trabajo" },
+  truckNumbers: { en: "Trucks", es: "Camiones" },
+  date: { en: "Date", es: "Fecha" },
+  leftYard: { en: "Left the yard", es: "Salida del patio" },
+  arrivedJob: { en: "Arrived at job", es: "Llegada al trabajo" },
+  leftJob: { en: "Left the job", es: "Salida del trabajo" },
+  backYard: { en: "Back at the yard", es: "Regreso al patio" },
+  lunch: { en: "Lunch", es: "Almuerzo" },
+  dayHours: { en: "Day", es: "Día" },
+  onSite: { en: "On site", es: "En el sitio" },
+  travel: { en: "Travel", es: "Traslado" },
+  crewHours: { en: "Crew hours", es: "Horas de cuadrilla" },
+  name: { en: "Name", es: "Nombre" },
+  role: { en: "Role", es: "Rol" },
+  notOnRoster: { en: "not on the roster", es: "no está en la lista" },
+  noHoursRecorded: { en: "no hours", es: "sin horas" },
+
+  // The description carries two languages. The console shows the translation
+  // and keeps the original one click away — never hidden, never replaced.
+  original: { en: "Original", es: "Original" },
+  translation: { en: "Translation", es: "Traducción" },
+  showOriginal: { en: "Show the original", es: "Ver el original" },
+  showTranslation: { en: "Show the translation", es: "Ver la traducción" },
+  notesLabel: { en: "Notes", es: "Notas" },
+  mileage: { en: "Mileage", es: "Millaje" },
+  disposals: { en: "Disposals", es: "Desechos" },
+  trips: { en: "trips", es: "viajes" },
+  qty: { en: "Qty", es: "Cant." },
+  cost: { en: "Cost", es: "Costo" },
+  equipment: { en: "Equipment", es: "Equipo" },
+  materials: { en: "Materials", es: "Materiales" },
+  plants: { en: "Plants", es: "Plantas" },
+  subcontractors: { en: "Subcontractors", es: "Subcontratistas" },
+  trucks: { en: "Trucks", es: "Camiones" },
+  nothingRecorded: { en: "Nothing recorded", es: "Nada registrado" },
+  noPhotos: { en: "No photos with this report", es: "Sin fotos en este reporte" },
+  photoMissing: { en: "Photo unavailable", es: "Foto no disponible" },
+  openPhoto: { en: "Open full size", es: "Abrir en tamaño completo" },
+
+  // Actions
+  approve: { en: "Approve", es: "Aprobar" },
+  approving: { en: "Approving…", es: "Aprobando…" },
+  sendBack: { en: "Send back with a note", es: "Devolver con nota" },
+  sendingBack: { en: "Sending back…", es: "Devolviendo…" },
+  noteLabel: { en: "What needs fixing?", es: "¿Qué hay que corregir?" },
+  notePlaceholder: {
+    en: "e.g. Carlos's hours are missing",
+    es: "ej. faltan las horas de Carlos",
+  },
+  noteRequired: {
+    en: "Write what needs fixing — that note is the whole point of sending it back.",
+    es: "Escribe qué hay que corregir — esa nota es el punto de devolverlo.",
+  },
+  noteShown: {
+    en: "The foreman sees this on his phone.",
+    es: "El capataz ve esto en su teléfono.",
+  },
+  sentBackNote: { en: "Sent back", es: "Devuelto" },
+  cancel: { en: "Cancel", es: "Cancelar" },
+  actionFailed: {
+    en: "That did not go through. Try again.",
+    es: "No se pudo. Intenta de nuevo.",
+  },
+  reopen: { en: "Reopen", es: "Reabrir" },
+
+  // Not wired to a deployment
+  unconfigured: {
+    en: "This server is not set up to open the console.",
+    es: "Este servidor no está configurado para abrir la consola.",
+  },
+  unconfiguredHint: {
+    en: "It needs AUTH_SECRET to sign anyone in and NEXT_PUBLIC_CONVEX_URL to read the reports. Without them the console would show an empty day, which looks exactly like a day nobody worked.",
+    es: "Necesita AUTH_SECRET para dejar entrar a alguien y NEXT_PUBLIC_CONVEX_URL para leer los reportes. Sin eso la consola mostraría un día vacío, que se ve igual que un día en que nadie trabajó.",
+  },
+  unconfiguredMissing: { en: "Missing:", es: "Falta:" },
+} as const;
+
+export type ConsoleKey = keyof typeof CONSOLE;
+
+/**
+ * The console's language.
+ *
+ * English, because it serves Back to Nature's project managers, while the field
+ * wizard stays Spanish-first. Both languages are written above regardless, so
+ * this is one constant to change rather than a rewrite.
+ */
+export const CONSOLE_LANG: Lang = "en";
+
+export function tc(key: ConsoleKey, lang: Lang = CONSOLE_LANG): string {
+  return CONSOLE[key][lang];
+}
+
+/** `tc` with `{name}` placeholders filled in. */
+export function tcf(
+  key: ConsoleKey,
+  values: Record<string, string | number>,
+  lang: Lang = CONSOLE_LANG
+): string {
+  return tc(key, lang).replace(/\{(\w+)\}/g, (whole, name: string) =>
+    name in values ? String(values[name]) : whole
+  );
+}
+
 const DAYS: Record<Lang, string[]> = {
   en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
   es: ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"],

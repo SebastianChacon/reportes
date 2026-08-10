@@ -18,6 +18,79 @@
   color-scheme: light;
 }
 
+/*
+ * The office console.
+ *
+ * Scoped to its own subtree rather than applied globally, because the phone app
+ * is deliberately light in every condition — a foreman reads it outdoors, where
+ * a dark theme is the wrong answer no matter what the OS says. The console is
+ * read at a desk, often at dusk, so it follows the system instead.
+ *
+ * Only the tokens change. Every component underneath is already written against
+ * these variables, so nothing has to know which surface it landed on.
+ */
+[data-surface="office"] {
+  --surface: #ffffff;
+  --surface-sunk: #f6f6f5;
+  --surface-raised: #ffffff;
+  --ink: #16150f;
+  --ink-muted: #5f5d55;
+  --line: #e0dfd9;
+  --accent: #16150f;
+  --accent-soft: #f0efea;
+  --accent-contrast: #ffffff;
+
+  /* Status, which the phone has no vocabulary for. */
+  --ok: #2f6b3f;
+  --ok-soft: #e8f2ea;
+  --warn: #8a4b12;
+  --warn-soft: #fbeee1;
+
+  color-scheme: light;
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-surface="office"] {
+    --surface: #16150f;
+    --surface-sunk: #100f0b;
+    --surface-raised: #1d1c16;
+    --ink: #f2f1ea;
+    --ink-muted: #a3a096;
+    --line: #33312a;
+    --accent: #f2f1ea;
+    --accent-soft: #26251e;
+    --accent-contrast: #16150f;
+
+    /* Lifted well clear of the dark surface: the light-mode greens and browns
+     * fall under 4.5:1 against #1d1c16 and stop being readable as text. */
+    --ok: #7fc490;
+    --ok-soft: #1b2a1f;
+    --warn: #e0a35f;
+    --warn-soft: #2c2117;
+
+    color-scheme: dark;
+  }
+}
+
+/*
+ * The console is driven from a keyboard far more than the phone is, so focus is
+ * never left to the browser's default — which disappears entirely against the
+ * dark surface in some engines.
+ */
+[data-surface="office"] :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* A wide table scrolls inside itself. The page never moves sideways. */
+.scroll-x {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
 html {
   /* Never let a wide table push the whole page sideways on a phone. */
   overflow-x: hidden;

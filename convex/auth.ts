@@ -1,5 +1,10 @@
 import { v } from "convex/values";
-import { action, internalMutation, internalQuery } from "./_generated/server";
+import {
+  action,
+  internalAction,
+  internalMutation,
+  internalQuery,
+} from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { userRole } from "./validators";
@@ -25,6 +30,13 @@ const LOCKOUT_MINUTES = 15;
 /** Four digits. Anything else is a bug in the caller, not a wrong PIN. */
 const PIN_SHAPE = /^\d{4}$/;
 
+/**
+ * The office types on a keyboard, so the PIN's excuse does not apply. Ten
+ * characters is not a policy worth arguing about — it is the floor below which
+ * the 100k-iteration hash stops being the thing that matters.
+ */
+const MIN_PASSWORD = 10;
+
 /* ------------------------------------------------------------------ */
 /* Hashing                                                             */
 /* ------------------------------------------------------------------ */
@@ -39,10 +51,11 @@ function fromHex(hex: string): Uint8Array {
   return bytes;
 }
 
-async function hashPin(pin: string, saltHex: string): Promise<string> {
+/** Hashes a PIN or an office password — same cost, same salt discipline. */
+async function hashSecret(secret: string, saltHex: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(pin),
+    new TextEncoder().encode(secret),
     "PBKDF2",
     false,
     ["deriveBits"]
@@ -302,7 +315,7 @@ export const enrol = action({
     if (existing !== null) return { ok: false, reason: "enrolled" };
 
     const pinSalt = toHex(crypto.getRandomValues(new Uint8Array(16)));
-    const pinHash = await hashPin(args.pin, pinSalt);
+    const pinHash = await hashSecret(args.pin, pinSalt);
 
     const userId: Id<"users"> | null = await ctx.runMutation(internal.auth.createForeman, {
       crewMemberId: args.crewMemberId,
@@ -343,7 +356,7 @@ export const signIn = action({
       return { ok: false, reason: "locked", retryInMinutes: minutes };
     }
 
-    const hash = await hashPin(args.pin, found.pinSalt);
+    const hash = await hashSecret(args.pin, found.pinSalt);
     const ok = sameHash(hash, found.pinHash);
     await ctx.runMutation(internal.auth.recordAttempt, { userId: found.userId, ok });
 
@@ -380,5 +393,199 @@ export const enrolledIds = internalQuery({
   handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();
     return users.flatMap((u) => (u.crewMemberId ? [u.crewMemberId] : []));
+  },
+});
+
+/* ------------------------------------------------------------------ */
+/* The office side — email and a real password                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The console is not the phone, and its sign-in should not pretend to be.
+ *
+ * A foreman gets a 4-digit PIN because he is wearing gloves at 6am and the
+ * phone is already his. A PM is at a keyboard, on a machine that may be shared,
+ * and can see every report the company has filed — so: an email, a real
+ * password, and a session measured in hours rather than in months.
+ *
+ * There is deliberately no public way to create one of these. Self-service
+ * enrolment is right for a foreman, whose name is already on the roster and
+ * whose worst case is filing a report as himself; it is wrong for an account
+ * that can approve work, and the roster cannot vouch for an office hire the way
+ * it vouches for a crew member.
+ */
+
+type OfficeOutcome =
+  | {
+      ok: true;
+      identity: {
+        userId: Id<"users">;
+        name: string;
+        role: "foreman" | "manager" | "admin";
+        crewMemberId: string;
+      };
+    }
+  | {
+      ok: false;
+      reason: "bad_credentials" | "locked" | "not_office";
+      retryInMinutes?: number;
+    };
+
+const officeOutcome = v.union(
+  v.object({
+    ok: v.literal(true),
+    identity: v.object({
+      userId: v.id("users"),
+      name: v.string(),
+      role: userRole,
+      /** Always "" for an office account — there is no roster row behind it. */
+      crewMemberId: v.string(),
+    }),
+  }),
+  v.object({
+    ok: v.literal(false),
+    /**
+     * `bad_credentials` covers both "no such email" and "wrong password" on
+     * purpose. Telling them apart hands an attacker a way to learn which
+     * addresses are real, and the office cannot act on the difference anyway.
+     */
+    reason: v.union(
+      v.literal("bad_credentials"),
+      v.literal("locked"),
+      v.literal("not_office")
+    ),
+    retryInMinutes: v.optional(v.number()),
+  })
+);
+
+/** Case and stray spaces are how the same person fails to sign in twice. */
+function normaliseEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+export const officeCredentialsFor = internalQuery({
+  args: { email: v.string() },
+  returns: credentials,
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .unique();
+    if (user === null) return null;
+    return {
+      userId: user._id,
+      name: user.name,
+      role: user.role,
+      pinHash: user.pinHash,
+      pinSalt: user.pinSalt,
+      failedAttempts: user.failedAttempts,
+      lockedUntil: user.lockedUntil,
+    };
+  },
+});
+
+export const insertOfficeAccount = internalMutation({
+  args: {
+    email: v.string(),
+    name: v.string(),
+    role: v.union(v.literal("manager"), v.literal("admin")),
+    pinHash: v.string(),
+    pinSalt: v.string(),
+  },
+  returns: v.union(v.id("users"), v.null()),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .unique();
+    if (existing !== null) return null;
+
+    return await ctx.db.insert("users", {
+      name: args.name,
+      role: args.role,
+      email: args.email,
+      pinHash: args.pinHash,
+      pinSalt: args.pinSalt,
+      failedAttempts: 0,
+      enrolledAt: new Date().toISOString(),
+    });
+  },
+});
+
+/**
+ * Creates an office account. Internal on purpose — see the note above.
+ *
+ * Run it from an authenticated CLI, which is the same bar `removeAccount`
+ * already sits behind:
+ *
+ *     npx convex run auth:createOfficeAccount '{"email":"pm@backtonature.com","name":"Evan Ralph","password":"…","role":"admin"}'
+ *
+ * Returns `null` when the address already has an account, so re-running it is
+ * not a way to silently reset somebody's password.
+ */
+export const createOfficeAccount = internalAction({
+  args: {
+    email: v.string(),
+    name: v.string(),
+    password: v.string(),
+    role: v.optional(v.union(v.literal("manager"), v.literal("admin"))),
+  },
+  returns: v.union(v.id("users"), v.null()),
+  handler: async (ctx, args): Promise<Id<"users"> | null> => {
+    if (args.password.length < MIN_PASSWORD) {
+      throw new Error(`Password must be at least ${MIN_PASSWORD} characters.`);
+    }
+    const email = normaliseEmail(args.email);
+    if (!email.includes("@")) throw new Error("That is not an email address.");
+
+    const pinSalt = toHex(crypto.getRandomValues(new Uint8Array(16)));
+    const pinHash = await hashSecret(args.password, pinSalt);
+
+    return await ctx.runMutation(internal.auth.insertOfficeAccount, {
+      email,
+      name: args.name.trim(),
+      role: args.role ?? "manager",
+      pinHash,
+      pinSalt,
+    });
+  },
+});
+
+/** Proves someone is the office. The console's only door. */
+export const signInOffice = action({
+  args: { email: v.string(), password: v.string() },
+  returns: officeOutcome,
+  handler: async (ctx, args): Promise<OfficeOutcome> => {
+    const email = normaliseEmail(args.email);
+
+    const found: Credentials | null = await ctx.runQuery(
+      internal.auth.officeCredentialsFor,
+      { email }
+    );
+    if (found === null) return { ok: false, reason: "bad_credentials" };
+
+    // A foreman's row has no email, so this should be unreachable — but a
+    // foreman who somehow held one must not get in through the office door
+    // with a 4-digit PIN.
+    if (found.role === "foreman") return { ok: false, reason: "not_office" };
+
+    const minutes = lockedFor(found.lockedUntil);
+    if (minutes !== null) return { ok: false, reason: "locked", retryInMinutes: minutes };
+
+    const hash = await hashSecret(args.password, found.pinSalt);
+    const ok = sameHash(hash, found.pinHash);
+    await ctx.runMutation(internal.auth.recordAttempt, { userId: found.userId, ok });
+
+    if (!ok) return { ok: false, reason: "bad_credentials" };
+
+    return {
+      ok: true,
+      identity: {
+        userId: found.userId,
+        name: found.name,
+        role: found.role,
+        crewMemberId: "",
+      },
+    };
   },
 });

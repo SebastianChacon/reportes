@@ -99,8 +99,8 @@ El email lleva un resumen en HTML y el **PDF de una página** adjunto, con el mi
 ## La copia de la oficina (Convex)
 
 Cada reporte enviado se archiva además en una base de datos, para que el PM pueda
-revisarlos por día y por persona. Es la **Fase 0** del plan: la base ya guarda, la
-consola de revisión todavía no existe.
+revisarlos por día y por persona. La base guarda y **la consola ya existe**: vive en
+`/office` — ver [La consola de la oficina](#la-consola-de-la-oficina-office) más abajo.
 
 ### Encenderlo
 
@@ -146,6 +146,46 @@ sin marcar en el historial y se reintenta en la próxima reconexión.
 
 ---
 
+## La consola de la oficina (`/office`)
+
+Donde el PM lee el día: los cuatro números, **quién no entregó**, y cada reporte
+abierto entero con **Aprobar** y **Devolver con nota**. Está en inglés; el asistente
+de campo sigue en español.
+
+### Qué necesita para abrir
+
+Dos variables, y la consola te dice cuál falta en vez de mostrarte un día vacío:
+
+| Variable | Sin ella |
+|---|---|
+| `AUTH_SECRET` | Nadie puede entrar — no hay con qué firmar la sesión |
+| `NEXT_PUBLIC_CONVEX_URL` | No hay reportes que leer |
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+```
+
+### Crear una cuenta de oficina
+
+No hay alta pública, a propósito: un capataz se auto-enrola porque su nombre ya está
+en el roster y lo peor que puede hacer es reportar como sí mismo, pero una cuenta que
+**aprueba trabajo** no se reparte sola. Se crean desde un CLI autenticado, el mismo
+nivel donde ya vivía `auth:removeAccount`:
+
+```bash
+npx convex run auth:createOfficeAccount '{"email":"pm@tu-dominio.com","name":"Nombre Apellido","password":"una-contraseña-larga","role":"admin"}'
+```
+
+Mínimo 10 caracteres. Devuelve `null` si el correo ya tiene cuenta, así que
+re-correrlo **no** es una forma de resetearle la contraseña a alguien en silencio.
+
+La contraseña se verifica dentro de Convex con el mismo PBKDF2 de 100k iteraciones
+que el PIN del capataz, y con el mismo bloqueo de 15 minutos a los 5 intentos. La
+sesión dura 12 horas — no 90 días como la del teléfono — porque una consola se abre
+en escritorios que se comparten.
+
+---
+
 ## Editar la lista de personal
 
 La lista vive en [lib/catalog.ts](lib/catalog.ts), en la constante `CREW`. Cada persona es una línea:
@@ -164,20 +204,37 @@ En el mismo archivo están `EQUIPMENT`, `MATERIALS`, `PLANT_CATEGORIES`, `SUBCON
 
 ```
 app/
-  page.tsx                    punto de entrada
+  page.tsx                    punto de entrada (el asistente del capataz)
   api/send-report/route.ts    email + PDF adjunto (Resend)
+  api/auth/foreman/route.ts   enrolar / entrar con PIN → cookie
+  api/auth/office/route.ts    entrar con correo y contraseña → cookie de 12 h
+  api/office/status/route.ts  aprobar / devolver con nota
+  office/
+    layout.tsx                superficie "office": modo oscuro + lang="en"
+    entrar/                   la puerta — fuera del grupo protegido
+    (console)/
+      layout.tsx              la puerta aplicada: todo lo de adentro está detrás
+      page.tsx                el día
+      reportes/[id]/          un reporte, entero
 components/
   JobReportApp.tsx            asistente, idioma, autoguardado, envío
   DescriptionField.tsx        traductor ES⇄EN con caché
   SearchPicker.tsx            buscar-y-agregar con opción "otro"
   SignaturePad.tsx            firma con el dedo (canvas)
   steps/                      los 6 pasos
+  office/                     lo que solo usa la consola
+convex/
+  office.ts                   las cinco queries de lectura
+  auth.ts                     PIN del capataz + contraseña de la oficina
 lib/
   catalog.ts                  personal, equipo, materiales, camiones
   translate.ts                glosario offline + interfaz Translator
   pdf.ts                      PDF de una página
   calc.ts                     horas, costos, avisos, campos obligatorios
-  i18n.ts                     textos de la interfaz ES/EN
+  summaries.ts                las reglas de lectura, sin importar Convex
+  i18n.ts                     textos: UI (campo, ES) y CONSOLE (oficina, EN)
+  officeSession.ts            la puerta de la consola
+  officeDate.ts               qué significa "hoy" para la oficina
   storage.ts                  borrador, idioma, última cuadrilla, cola
 ```
 
@@ -186,6 +243,6 @@ lib/
 ## Notas
 
 - Objetivos táctiles de 44px, teclados nativos correctos (`date`, `time`, `inputmode="decimal"`), tipografía de 16px mínimo para que iOS no haga zoom al enfocar.
-- Se adapta al modo claro y oscuro del teléfono.
+- **El asistente del capataz es siempre claro**, aunque el teléfono esté en modo oscuro: se lee al aire libre, donde un tema oscuro es la respuesta equivocada diga lo que diga el sistema. **La consola sí sigue al sistema** — se lee en un escritorio, muchas veces de noche. Por eso el modo oscuro está limitado al subárbol `[data-surface="office"]` y no es global.
 - `npm audit` reporta 3 avisos *high* heredados de dependencias internas de Next (`postcss`, `sharp`). Ya estamos en la última versión de Next; no hay corrección disponible que no sea bajar de versión.
 # reportes
