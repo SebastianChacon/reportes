@@ -1,13 +1,14 @@
 # Plan — La consola del PM
 
-> **Estado: aprobado. Pasos A, B y C construidos; D en adelante pendientes.**
+> **Estado: aprobado. Pasos A–E construidos; queda F, la auditoría.**
 > `PROMPT-UI-PM.md` prohíbe construir la superficie del PM antes de que Sebastian
 > apruebe un plan. Este es ese plan, y está aprobado.
 >
-> **Hecho:** el paso A — identidad del capataz (sección 2) —, el paso B — las
-> cinco queries de `convex/office.ts` (sección 5) — y el paso C: `/office` y
-> `/office/reportes/[id]`, con la puerta de la oficina que faltaba.
-> **Pendiente:** D (buscar + persona/semana), E (email) y F (auditoría).
+> **Hecho:** A (identidad del capataz, sección 2), B (las queries de
+> `convex/office.ts`, sección 5), C (`/office` y `/office/reportes/[id]`, con la
+> puerta de la oficina), D (buscar + persona/semana) y E (el email rediseñado y
+> el link de vuelta al reporte, sección 7).
+> **Pendiente:** F, la auditoría.
 
 Reconcilia la **Fase 3 (Admin v1)** de [PLAN.md](PLAN.md) con lo que el repo
 realmente tiene hoy: Convex, no Neon + Drizzle.
@@ -302,10 +303,48 @@ original — nunca lo esconde.
 
 ---
 
-## 7. El email
+## 7. El email — construido
 
-Hoy es HTML inline armado a mano en `app/api/send-report/route.ts`. Se rediseña
-con los mismos tokens que la consola, y **gana un link al reporte** — que es lo
+> **Hecho, y el link resultó ser más interesante de lo que el plan suponía.**
+>
+> El HTML salió de la ruta y vive en `lib/reportEmail.ts`, con los tokens de la
+> consola escritos como hex literal — ningún cliente de correo resuelve `var()`.
+> Solo claro: un email que intentara seguir el modo oscuro del lector lo
+> reescribe Gmail e invierte Outlook, cada uno para su lado.
+>
+> **El link no puede llevar el id de Convex, porque cuando el email sale todavía
+> no existe.** El teléfono manda el correo apenas el capataz aprieta enviar, y
+> archiva la copia de la oficina *después*, como cortesía en segundo plano a la
+> que se le permite fallar (`lib/office.ts`). Así que el link lleva `clientId`
+> —la clave de idempotencia que el teléfono ya calculó— y
+> `/office/reportes/clave/[clientId]` la convierte en el reporte real:
+> `office.byClientId` sobre el índice `by_client_id` que ya existía.
+>
+> Eso obligó a una tercera respuesta que el plan no había previsto: **"el correo
+> llegó y el reporte no"**. Es un estado real y recuperable —el teléfono se quedó
+> sin señal a las 6pm y va a reintentar— y decir "no encontrado" mandaría a
+> alguien a buscar un reporte que va a aparecer solo. Por eso es una página y no
+> un redirect en middleware.
+>
+> La página vive dentro de `(console)`, así que un link reenviado a alguien sin
+> cuenta cae en el login, no en un reporte. Es la única URL de la consola que
+> sale del edificio.
+>
+> **Sin `NEXT_PUBLIC_CONVEX_URL` no hay link y el email lo dice**, en vez de
+> dibujar un botón que caería en "no está". `APP_URL` fija el origen; sin ella se
+> usa el Origin de la petición, que ya fue validado contra Host.
+>
+> **Descargar PDF y reenviar por correo NO se construyeron, y ahora se sabe por
+> qué.** El PDF que el capataz mandó no está guardado en ningún lado, y las
+> firmas no llegan a la base (sección `/office/reportes/[id]`). Rehacerlo desde
+> lo almacenado daría un documento sin firmas: distinto del que está en la
+> bandeja del PM. Darle a un PM un PDF que no coincide con el que ya tiene es
+> peor que no darle ninguno. **Eso es una decisión de esquema —guardar el PDF, o
+> guardar las firmas— y no se toma acá.** Es lo primero que hay que resolver si
+> esos dos botones importan.
+
+Era HTML inline armado a mano en `app/api/send-report/route.ts`. Se rediseñó
+con los mismos tokens que la consola, y **ganó un link al reporte** — que es lo
 que lo convierte de documento final en notificación. Ese link es la mitad del
 valor de tener consola: el PM abre el mail en la camioneta y toca.
 
@@ -318,9 +357,24 @@ A  Identidad del capataz + auth      ✅ hecho
 B  Queries de Convex                 ✅ hecho: sin UI, verificadas contra dev
 C  /office (el día) + detalle        ✅ hecho: contra dev, con datos sembrados
 D  Buscar + persona/semana           ✅ hecho: contra dev, con datos sembrados
-E  Email rediseñado con link         ← sigue
-F  Auditoría: web-design-guidelines, react-best-practices, npm test
+E  Email rediseñado con link         ✅ hecho: contra dev, las dos ramas del link
+F  Auditoría: web-design-guidelines, react-best-practices, npm test  ← sigue
 ```
+
+**E se verificó con un reporte sembrado y la vuelta completa del link.** Se
+archivó un reporte de prueba en `dev:canny-dove-786` bajo una clave conocida y
+se siguió el link como lo seguiría un PM: sin sesión cae en el login (la puerta
+de `(console)` cubre la ruta nueva), con sesión redirige a
+`/office/reportes/[id]` y muestra el reporte correcto. Una clave que nadie
+archivó —incluida una clave `legacy:` llena de dos puntos, que es la que prueba
+que el encode/decode de la URL no la rompe— muestra "este reporte no está
+archivado". Después se borró el reporte.
+
+Queda vivo en `dev` **una cuenta de oficina de prueba** ("Step E Probe"):
+`auth:removeAccount` busca por `crewMemberId` y una cuenta de oficina no tiene,
+así que hoy solo se borra desde el dashboard de Convex. Es el mismo agujero que
+la sección 8 ya anotaba para el capataz que olvida el PIN, ahora confirmado del
+lado de la oficina.
 
 **C se construyó contra `dev`, no contra producción, y el bloqueo de abajo sigue
 en pie.** El plan decía que producción bloqueaba a C. Bloquea a *desplegar* C, no
