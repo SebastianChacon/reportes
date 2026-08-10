@@ -345,6 +345,33 @@ export const report = query({
   },
 });
 
+/**
+ * The report an emailed link points at.
+ *
+ * The email cannot carry a Convex id, because when it is sent there is no row
+ * yet: the phone mails the report the moment the foreman hits send, and files
+ * the office's copy afterwards, as a background courtesy that is allowed to
+ * fail. What both halves already agree on is `clientId` — the idempotency key
+ * the phone computes before either happens — so that is what the link carries,
+ * and this is what turns it into an id once the row lands.
+ *
+ * `first()` rather than `unique()`: `reports.submit` is what enforces one row
+ * per key, and this is a link from somebody's inbox. If that invariant were
+ * ever broken, showing the report would be a better answer than a stack trace.
+ */
+export const byClientId = query({
+  args: { clientId: v.string() },
+  returns: v.union(v.null(), v.object({ id: v.id("reports"), date: v.string() })),
+  handler: async (ctx, args) => {
+    const found = await ctx.db
+      .query("reports")
+      .withIndex("by_client_id", (q) => q.eq("clientId", args.clientId))
+      .first();
+
+    return found === null ? null : { id: found._id, date: found.date };
+  },
+});
+
 /* ------------------------------------------------------------------ */
 /* /office/reportes — search                                           */
 /* ------------------------------------------------------------------ */

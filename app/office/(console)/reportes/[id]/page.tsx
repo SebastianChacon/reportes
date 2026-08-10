@@ -24,9 +24,13 @@ import { ReviewActions } from "@/components/office/ReviewActions";
  *   in `submittedReportFields`, so they never reach the database. They exist
  *   only inside the PDF the foreman sent. Showing an empty signature box would
  *   imply nobody signed.
- * - **Download PDF / resend by email.** Both belong with the email rework in
- *   Step E of PLAN-CONSOLA.md §8, which is also where the report link that makes
- *   a resend worth anything gets added.
+ * - **Download PDF / resend by email.** Step E built the email rework and the
+ *   link, and in doing so established why these two cannot follow: the PDF the
+ *   foreman sent is not stored anywhere. Rebuilding one here would produce an
+ *   unsigned document — the signatures never reach the database, per above — and
+ *   handing a PM a PDF that differs from the one in his inbox is worse than
+ *   handing him none. Both need a schema decision first, not a button. See
+ *   PLAN-CONSOLA.md §7.
  */
 export const dynamic = "force-dynamic";
 

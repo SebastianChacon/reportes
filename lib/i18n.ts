@@ -610,6 +610,39 @@ export const CONSOLE = {
   openReport: { en: "Open the report", es: "Abrir el reporte" },
   viewWeek: { en: "See this person's week", es: "Ver la semana de esta persona" },
 
+  // The email the office gets when a report is sent (lib/reportEmail.ts).
+  // Console strings, not field strings: the reader is a project manager at a
+  // desk, and the email's whole job now is to get him to the console.
+  emailSubjectTag: { en: "Job report", es: "Reporte de trabajo" },
+  emailOpenInConsole: { en: "Open in the console", es: "Abrir en la consola" },
+  emailNeedsALook: { en: "needs a look", es: "necesita revisión" },
+  emailPreheaderCrew: { en: "{n} on the crew", es: "{n} en la cuadrilla" },
+  emailYardToJob: { en: "Yard → Job", es: "Patio → Trabajo" },
+  emailJobToYard: { en: "Job → Yard", es: "Trabajo → Patio" },
+  emailPdfAttached: {
+    en: "The full report is attached as a one-page PDF, signatures and all.",
+    es: "El reporte completo va adjunto en un PDF de una página, con firmas y todo.",
+  },
+  emailPhotosAttached: { en: "{n} photo(s) attached.", es: "{n} foto(s) adjuntas." },
+  emailNoPhotosAttached: { en: "No photos on this one.", es: "Este no trae fotos." },
+  emailSentAt: { en: "Sent {at} from the field app.", es: "Enviado {at} desde la app de campo." },
+  // Said instead of a button that would land nowhere. See `linkBlock`.
+  emailNoConsole: {
+    en: "This server has no console wired up, so there is no link to open this report with — the PDF below is the whole record.",
+    es: "Este servidor no tiene consola conectada, así que no hay link para abrir este reporte — el PDF de abajo es todo el registro.",
+  },
+
+  // Following an emailed link (/office/reportes/clave/[clientId])
+  notFiledTitle: { en: "This report has not been filed.", es: "Este reporte no está archivado." },
+  notFiledHint: {
+    en: "The email went out, but the phone never managed to store the office's copy — usually no signal at the end of the day. It files itself the next time that phone opens the app with a connection.",
+    es: "El correo salió, pero el teléfono nunca logró guardar la copia de la oficina — casi siempre por falta de señal al final del día. Se archiva solo la próxima vez que ese teléfono abra la app con conexión.",
+  },
+  notFiledMeanwhile: {
+    en: "The PDF attached to the email is the full report in the meantime.",
+    es: "Mientras tanto, el PDF adjunto al correo es el reporte completo.",
+  },
+
   // Not wired to a deployment
   unconfigured: {
     en: "This server is not set up to open the console.",
