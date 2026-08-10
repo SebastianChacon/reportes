@@ -19,17 +19,24 @@
 }
 
 /*
- * The office console.
+ * The desk surfaces: the office console, and the project overview at /inicio.
  *
- * Scoped to its own subtree rather than applied globally, because the phone app
- * is deliberately light in every condition — a foreman reads it outdoors, where
- * a dark theme is the wrong answer no matter what the OS says. The console is
- * read at a desk, often at dusk, so it follows the system instead.
+ * Scoped to their own subtrees rather than applied globally, because the phone
+ * app is deliberately light in every condition — a foreman reads it outdoors,
+ * where a dark theme is the wrong answer no matter what the OS says. These two
+ * are read at a desk, often at dusk, so they follow the system instead.
+ *
+ * They share one token block rather than each declaring its own. The overview
+ * links into the console constantly; two warm off-blacks that were nearly the
+ * same would read as a rendering bug on the way across, and keeping them equal
+ * by hand is a promise nobody keeps. They also both need the status vocabulary
+ * below, which the phone has no use for.
  *
  * Only the tokens change. Every component underneath is already written against
  * these variables, so nothing has to know which surface it landed on.
  */
-[data-surface="office"] {
+[data-surface="office"],
+[data-surface="home"] {
   --surface: #ffffff;
   --surface-sunk: #f6f6f5;
   --surface-raised: #ffffff;
@@ -52,7 +59,8 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  [data-surface="office"] {
+  [data-surface="office"],
+  [data-surface="home"] {
     --surface: #16150f;
     --surface-sunk: #100f0b;
     --surface-raised: #1d1c16;
@@ -75,14 +83,42 @@
 }
 
 /*
- * The console is driven from a keyboard far more than the phone is, so focus is
- * never left to the browser's default — which disappears entirely against the
- * dark surface in some engines.
+ * The desk surfaces are driven from a keyboard far more than the phone is, so
+ * focus is never left to the browser's default — which disappears entirely
+ * against the dark surface in some engines.
  */
-[data-surface="office"] :focus-visible {
+[data-surface="office"] :focus-visible,
+[data-surface="home"] :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/*
+ * A card that is one big link.
+ *
+ * The press feedback is on the card, not on a button inside it, because the
+ * whole rectangle is the target — and it is `transform`, so it never moves the
+ * cards next to it. The hover lift is gated behind a real pointer: on a phone,
+ * `:hover` fires on tap and leaves the card stuck in its hovered state.
+ */
+.press {
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 160ms ease, background-color 160ms ease;
+  /* No 300ms wait before the tap registers, and no grey flash of the browser's
+   * own making on top of the press state we drew ourselves. */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.press:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .press:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  }
 }
 
 /* A wide table scrolls inside itself. The page never moves sideways. */

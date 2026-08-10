@@ -344,6 +344,8 @@ export const CONSOLE = {
   office: { en: "Office", es: "Oficina" },
   company: { en: "Back to Nature", es: "Back to Nature" },
   signOut: { en: "Sign out", es: "Salir" },
+  // The one page in the product that is behind neither door.
+  backToOverview: { en: "Project overview", es: "Panel del proyecto" },
   signedInAs: { en: "Signed in as", es: "Conectado como" },
 
   // Sign in
@@ -679,6 +681,243 @@ export function tcf(
   return tc(key, lang).replace(/\{(\w+)\}/g, (whole, name: string) =>
     name in values ? String(values[name]) : whole
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* The overview (/inicio)                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A third vocabulary, and for the same reason there is a second one.
+ *
+ * `UI` speaks to a foreman about the day he is having; `CONSOLE` speaks to a
+ * manager about the day that has happened. This speaks about the software
+ * itself — what it does, what this particular server has switched on, and where
+ * each screen is. Neither of the other two has any use for that, and folding it
+ * into either would put strings about environment variables next to strings
+ * about polymeric sand.
+ *
+ * Unlike the console, this one is Spanish-first: it is the front door, and the
+ * people who own this product read Spanish. The toggle is real either way.
+ */
+export const HOME = {
+  // Shell
+  title: { en: "Project overview", es: "Panel del proyecto" },
+  tagline: {
+    en: "Everything the Back to Nature job report does, and what this server has switched on.",
+    es: "Todo lo que hace el reporte de trabajo de Back to Nature, y qué tiene encendido este servidor.",
+  },
+  language: { en: "Language", es: "Idioma" },
+
+  // The two surfaces
+  surfaces: { en: "The two surfaces", es: "Las dos superficies" },
+  fieldTitle: { en: "Field wizard", es: "Asistente de campo" },
+  fieldBody: {
+    en: "Six steps on a phone, Spanish, light in every condition — it is read outdoors, where a dark theme is the wrong answer whatever the OS says.",
+    es: "Seis pasos en el teléfono, en español, siempre en claro — se lee al aire libre, donde un tema oscuro es la respuesta equivocada diga lo que diga el sistema.",
+  },
+  fieldCta: { en: "Open the wizard", es: "Abrir el asistente" },
+  officeTitle: { en: "Office console", es: "Consola de la oficina" },
+  officeBody: {
+    en: "The day, the search and one person's week. English, at a desk, and it follows the system into dark mode.",
+    es: "El día, la búsqueda y la semana de una persona. En inglés, en un escritorio, y sigue al sistema al modo oscuro.",
+  },
+  officeCta: { en: "Open the console", es: "Abrir la consola" },
+  officeSignInCta: { en: "Sign in to the console", es: "Entrar a la consola" },
+  officeLocked: {
+    en: "Not wired up on this server yet.",
+    es: "Todavía no está conectada en este servidor.",
+  },
+
+  // What this server has switched on
+  status: { en: "What is switched on here", es: "Qué está encendido acá" },
+  statusHint: {
+    en: "Every piece above the phone switches itself off when its variable is missing, instead of failing loudly. That is good in the field and impossible to debug, so the missing names are printed here.",
+    es: "Cada pieza por encima del teléfono se apaga sola cuando le falta su variable, en vez de fallar a los gritos. Eso está bien en el campo y es imposible de depurar, así que acá se imprimen los nombres que faltan.",
+  },
+  stateAlways: { en: "Needs nothing", es: "No necesita nada" },
+  stateReady: { en: "On", es: "Encendido" },
+  stateOff: { en: "Off", es: "Apagado" },
+  missingLabel: { en: "Missing", es: "Falta" },
+  withoutIt: { en: "Without it", es: "Sin eso" },
+  fieldOnlyNote: {
+    en: "Nothing above the phone is configured on this server, so what you are looking at is the field wizard and nothing else — which is a supported way to run it, not a broken install.",
+    es: "En este servidor no hay nada configurado por encima del teléfono, así que lo que estás viendo es el asistente de campo y nada más — que es una forma válida de correrlo, no una instalación rota.",
+  },
+
+  capFieldTitle: { en: "Field capture", es: "Captura en campo" },
+  capFieldBody: {
+    en: "The wizard, the offline draft and the send queue. It depends on no variable at all, which is the point: a report at 6am matters more than the rest of this list.",
+    es: "El asistente, el borrador sin conexión y la cola de envío. No depende de ninguna variable, y ese es el punto: un reporte a las 6am importa más que todo el resto de esta lista.",
+  },
+  capEmailTitle: { en: "Email delivery", es: "Envío por email" },
+  capEmailBody: {
+    en: "Resend sends the office a notification with the one-page PDF attached and a link straight into the console.",
+    es: "Resend le manda a la oficina una notificación con el PDF de una página adjunto y un link directo a la consola.",
+  },
+  capEmailOff: {
+    en: "Sending returns 503, the phone says so plainly, and the foreman downloads the PDF instead.",
+    es: "El envío devuelve 503, el teléfono lo dice claramente y el capataz descarga el PDF en su lugar.",
+  },
+  capArchiveTitle: { en: "The office archive", es: "El archivo de la oficina" },
+  capArchiveBody: {
+    en: "Every sent report is stored in Convex with its totals computed at write time, so the console can never contradict the PDF.",
+    es: "Cada reporte enviado se guarda en Convex con sus totales calculados al escribir, para que la consola nunca contradiga al PDF.",
+  },
+  capArchiveOff: {
+    en: "Reports go out by email and nothing is filed. The phone keeps its last 20, so the first reconnect after this is configured files the weeks already gone by.",
+    es: "Los reportes salen por email y no se archiva nada. El teléfono guarda los últimos 20, así que la primera reconexión después de configurarlo archiva las semanas que ya pasaron.",
+  },
+  capConsoleTitle: { en: "The console door", es: "La puerta de la consola" },
+  capConsoleBody: {
+    en: "A 12-hour office session — not the phone's 90 days, because a console is opened on shared desktops. PBKDF2 at 100k iterations, locked for 15 minutes after 5 tries.",
+    es: "Sesión de oficina de 12 horas — no los 90 días del teléfono, porque una consola se abre en escritorios compartidos. PBKDF2 de 100k iteraciones y bloqueo de 15 minutos a los 5 intentos.",
+  },
+  capConsoleOff: {
+    en: "Nobody can sign in, and the console says exactly that rather than showing an empty day — an empty day and a misconfigured server look identical.",
+    es: "Nadie puede entrar, y la consola lo dice en vez de mostrar un día vacío — un día vacío y un servidor mal configurado se ven igual.",
+  },
+
+  // Today
+  today: { en: "Today", es: "Hoy" },
+  todaySignedOut: {
+    en: "The day's numbers are behind the console door. This page is not.",
+    es: "Los números del día están detrás de la puerta de la consola. Esta página no.",
+  },
+  todayUnconfigured: {
+    en: "No archive is connected, so there are no numbers — and four zeroes here would read as a day when nobody worked.",
+    es: "No hay archivo conectado, así que no hay números — y cuatro ceros acá se leerían como un día en que nadie trabajó.",
+  },
+  todayOpen: { en: "Open the day", es: "Abrir el día" },
+  todayNotFiled: { en: "Still to file", es: "Faltan por entregar" },
+
+  // The capability inventory
+  whatItDoes: { en: "What it does", es: "Qué hace" },
+  groupPhone: { en: "On the phone", es: "En el teléfono" },
+  groupTranslator: { en: "The translator", es: "El traductor" },
+  groupOutputs: { en: "What comes out", es: "Lo que sale" },
+  groupOffice: { en: "In the office", es: "En la oficina" },
+
+  itmSteps: {
+    en: "Six steps instead of a sheet with 200 boxes.",
+    es: "Seis pasos en vez de una hoja con 200 casillas.",
+  },
+  itmSearchAdd: {
+    en: "Search-and-add: nothing is drawn until you type. The paper printed 200 rows and the foreman ticked five.",
+    es: "Buscar-y-agregar: no se dibuja nada hasta que escribís. El papel imprimía 200 filas y el capataz marcaba cinco.",
+  },
+  itmApplyAll: {
+    en: "\"Apply to everyone\" and \"same crew as the last report\" — on a normal day the whole crew works the same hours.",
+    es: "«Aplicar a todos» y «misma cuadrilla del último reporte» — en un día normal toda la cuadrilla trabaja las mismas horas.",
+  },
+  itmAdhoc: {
+    en: "Names and materials that were never on the printed list can be written in, and are marked with * in the PDF.",
+    es: "Los nombres y materiales que nunca estuvieron en la lista impresa se pueden escribir, y salen marcados con * en el PDF.",
+  },
+  itmTimes: {
+    en: "Four times in, and total, on-site and travel hours come out — with lunch taken off and contradictory times refused.",
+    es: "Entran cuatro horarios y salen las horas totales, en sitio y de traslado — con el almuerzo descontado y los horarios que se contradicen rechazados.",
+  },
+  itmAutosave: {
+    en: "Autosaved locally as you type. A dead battery costs nothing.",
+    es: "Autoguardado local mientras escribís. Que se muera la batería no cuesta nada.",
+  },
+  itmQueue: {
+    en: "No signal: the report waits in a queue on the phone and retries by itself when the connection comes back.",
+    es: "Sin señal: el reporte espera en una cola en el teléfono y se reintenta solo cuando vuelve la conexión.",
+  },
+  itmSignature: {
+    en: "Signatures drawn with a finger, and photos from the job.",
+    es: "Firmas con el dedo, y fotos del trabajo.",
+  },
+  itmPin: {
+    en: "A four-digit PIN picks the foreman off the roster once and keeps that phone his for 90 days.",
+    es: "Un PIN de cuatro dígitos elige al capataz de la lista una sola vez y deja ese teléfono suyo por 90 días.",
+  },
+
+  itmGlossary: {
+    en: "A trade glossary, offline and free per use — polymeric sand, bluestone edge, brick joints.",
+    es: "Un glosario del oficio, sin internet y sin costo por uso — arena polimérica, borde de piedra azul, juntas de ladrillo.",
+  },
+  itmCache: {
+    en: "The original is never overwritten, and a second click on the same button goes back to it.",
+    es: "El original nunca se sobrescribe, y el segundo clic en el mismo botón vuelve a él.",
+  },
+  itmUnknown: {
+    en: "Words it did not recognise are shown on screen, so nobody trusts the result blindly.",
+    es: "Las palabras que no reconoció se muestran en pantalla, para que nadie confíe a ciegas en el resultado.",
+  },
+  itmSwap: {
+    en: "One interface, one line to change: swap the glossary for an API and nothing else in the app notices.",
+    es: "Una interfaz y una línea que cambiar: reemplazá el glosario por una API y nada más en la app se entera.",
+  },
+
+  itmPdf: {
+    en: "A one-page PDF in the same section order as the printed form.",
+    es: "Un PDF de una página, con el mismo orden de secciones que el formulario impreso.",
+  },
+  itmEmail: {
+    en: "An email that is a notification, not the record: summary, PDF attached, and a button into the console.",
+    es: "Un email que es una notificación, no el registro: resumen, PDF adjunto y un botón hacia la consola.",
+  },
+  itmShare: {
+    en: "The phone's own share sheet when there is no server to send through.",
+    es: "La hoja de compartir del teléfono cuando no hay servidor por donde mandarlo.",
+  },
+  itmBoth: {
+    en: "Whatever was translated travels in both languages.",
+    es: "Lo que se tradujo viaja en los dos idiomas.",
+  },
+
+  itmDay: {
+    en: "The day: four numbers, then who has not filed, then every report — the order a manager asks at 5pm.",
+    es: "El día: cuatro números, después quién no entregó, después cada reporte — el orden en que un manager pregunta a las 5pm.",
+  },
+  itmReview: {
+    en: "Approve, or return with a note, over the whole report rather than a summary of it.",
+    es: "Aprobar, o devolver con una nota, sobre el reporte entero y no sobre un resumen.",
+  },
+  itmSearch: {
+    en: "Search by date range, client, job number, foreman, crew member and status.",
+    es: "Buscar por rango de fechas, cliente, número de trabajo, capataz, persona de cuadrilla y estado.",
+  },
+  itmUrlFilters: {
+    en: "The filters live in the URL, so a search is a link you send on WhatsApp and it arrives showing the same thing.",
+    es: "Los filtros viven en la URL, así que una búsqueda es un link que mandás por WhatsApp y llega mostrando lo mismo.",
+  },
+  itmPerson: {
+    en: "One person's week, Monday to Sunday, with the days nobody wrote hours for counted separately — payroll needs that before it pays.",
+    es: "La semana de una persona, de lunes a domingo, contando aparte los días en que nadie anotó las horas — la nómina necesita eso antes de pagar.",
+  },
+  itmIdempotent: {
+    en: "Filing the same report twice is a no-op. The queue retries, and payroll must not count the day twice.",
+    es: "Archivar dos veces el mismo reporte no hace nada. La cola reintenta, y la nómina no puede contar el día dos veces.",
+  },
+
+  // Every screen
+  routes: { en: "Every screen", es: "Todas las pantallas" },
+  routesHint: {
+    en: "Six screens. The two with a name in the address are reached from inside, not typed.",
+    es: "Seis pantallas. Las dos que llevan un nombre en la dirección se alcanzan desde adentro, no se escriben.",
+  },
+  rtField: { en: "The wizard a foreman fills in.", es: "El asistente que llena el capataz." },
+  rtSignIn: { en: "The console's door.", es: "La puerta de la consola." },
+  rtDay: { en: "Today's board.", es: "El tablero de hoy." },
+  rtSearch: { en: "Search across every report ever filed.", es: "Buscar entre todos los reportes archivados." },
+  rtReport: { en: "One report, whole, with approve and return.", es: "Un reporte entero, con aprobar y devolver." },
+  rtPerson: { en: "One person's week, for payroll.", es: "La semana de una persona, para la nómina." },
+  reachedFrom: { en: "Reached from", es: "Se llega desde" },
+  fromReportCard: { en: "a report card", es: "una tarjeta de reporte" },
+  fromCrewName: { en: "a name in the crew", es: "un nombre en la cuadrilla" },
+} as const;
+
+export type HomeKey = keyof typeof HOME;
+
+/** The overview is Spanish-first — see the note on `HOME`. */
+export const HOME_LANG: Lang = "es";
+
+export function th(key: HomeKey, lang: Lang = HOME_LANG): string {
+  return HOME[key][lang];
 }
 
 const DAYS: Record<Lang, string[]> = {

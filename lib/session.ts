@@ -40,12 +40,20 @@ export function ttlFor(role: Role): number {
   return role === "foreman" ? FOREMAN_TTL_SECONDS : OFFICE_TTL_SECONDS;
 }
 
+/**
+ * A short secret on an HS256 token is the kind of thing that looks configured
+ * and is not, so it is refused rather than accepted quietly.
+ *
+ * Exported because the overview screen reports on this same variable, and a
+ * second copy of the number would eventually disagree with this one — telling
+ * someone their server is ready while every sign-in is refused.
+ */
+export const MIN_SECRET_LENGTH = 32;
+
 /** `null` means no secret is configured, which is a supported way to run. */
 export function sessionSecret(): Uint8Array | null {
   const secret = process.env.AUTH_SECRET?.trim();
-  // A short secret on an HS256 token is the kind of thing that looks configured
-  // and is not, so it is refused rather than accepted quietly.
-  if (!secret || secret.length < 32) return null;
+  if (!secret || secret.length < MIN_SECRET_LENGTH) return null;
   return new TextEncoder().encode(secret);
 }
 

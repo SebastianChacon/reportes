@@ -30,8 +30,12 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
             highlighted next to it. Nothing wraps — a header that reflows into
             three lines pushes the day off the screen. */}
         <div className="flex items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6">
+          {/* The wordmark goes to the overview, not to the day — "The day" is
+              the tab immediately to its right, so pointing both at the same
+              screen would waste the one slot that can lead out of the console.
+              It is hidden below `sm`, where the header has no room for it. */}
           <Link
-            href="/office"
+            href="/inicio"
             className="hidden shrink-0 items-baseline gap-2 whitespace-nowrap rounded-md text-[15px] font-bold tracking-tight sm:flex"
           >
             {tc("company")}
