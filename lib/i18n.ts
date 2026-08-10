@@ -526,6 +526,90 @@ export const CONSOLE = {
   },
   reopen: { en: "Reopen", es: "Reabrir" },
 
+  // Getting between the screens
+  navDay: { en: "The day", es: "El día" },
+  navSearch: { en: "Search", es: "Buscar" },
+
+  // Search
+  searchTitle: { en: "Search reports", es: "Buscar reportes" },
+  searchHint: {
+    en: "Every filter stays in the address bar, so a search is a link you can send.",
+    es: "Cada filtro queda en la barra de direcciones, así que una búsqueda es un link que puedes mandar.",
+  },
+  filterFrom: { en: "From", es: "Desde" },
+  filterTo: { en: "To", es: "Hasta" },
+  filterStatus: { en: "Status", es: "Estado" },
+  filterClient: { en: "Client", es: "Cliente" },
+  filterClientHint: {
+    en: "Any part of the name",
+    es: "Cualquier parte del nombre",
+  },
+  filterJob: { en: "Job number", es: "Número de trabajo" },
+  // Exact on purpose, and said out loud: 2155 is a different job from 21550.
+  filterJobHint: { en: "The whole number", es: "El número completo" },
+  filterFiledBy: { en: "Filed by", es: "Enviado por" },
+  filterPerson: { en: "On the crew", es: "En la cuadrilla" },
+  filterAny: { en: "Anyone", es: "Cualquiera" },
+  filterAnyStatus: { en: "Any", es: "Cualquiera" },
+  runSearch: { en: "Search", es: "Buscar" },
+  clearFilters: { en: "Clear", es: "Limpiar" },
+  searchShortcut: { en: "Press / to search", es: "Presiona / para buscar" },
+
+  resultsOne: { en: "1 report", es: "1 reporte" },
+  resultsMany: { en: "{n} reports", es: "{n} reportes" },
+  // A search that quietly drops results is worse than one that says it stopped.
+  resultsTruncated: {
+    en: "Showing the most recent matches only. Narrow the dates to see the rest.",
+    es: "Se muestran solo las coincidencias más recientes. Acorta las fechas para ver el resto.",
+  },
+  noResults: { en: "Nothing matched that search.", es: "Nada coincide con esa búsqueda." },
+  noResultsHint: {
+    en: "Try a wider date range, or clear a filter.",
+    es: "Prueba un rango de fechas más amplio, o quita un filtro.",
+  },
+  noResultsInRange: {
+    en: "No reports were filed in these dates.",
+    es: "No se envió ningún reporte en esas fechas.",
+  },
+  // Nothing is filtered here, so telling anyone to clear a filter would be
+  // advice about a box they never touched.
+  noResultsInRangeHint: {
+    en: "Try a wider date range.",
+    es: "Prueba un rango de fechas más amplio.",
+  },
+
+  // One person's week
+  personTitle: { en: "Week", es: "Semana" },
+  personHint: {
+    en: "Every day this person was on a crew, from the reports the foremen filed.",
+    es: "Cada día que esta persona estuvo en una cuadrilla, según los reportes que enviaron los capataces.",
+  },
+  previousWeek: { en: "Previous week", es: "Semana anterior" },
+  nextWeek: { en: "Next week", es: "Semana siguiente" },
+  thisWeek: { en: "This week", es: "Esta semana" },
+  totalHours: { en: "Total hours", es: "Horas totales" },
+  daysWorked: { en: "Days worked", es: "Días trabajados" },
+  daysMissingHours: { en: "Days without hours", es: "Días sin horas" },
+  // Payroll cannot pay from a week until this is zero, so it is said plainly.
+  daysMissingHoursHint: {
+    en: "On these days they were on a crew and nobody wrote the hours down.",
+    es: "Esos días estuvo en una cuadrilla y nadie anotó las horas.",
+  },
+  noWorkInWeek: { en: "No work recorded in these dates.", es: "No hay trabajo registrado en esas fechas." },
+  noWorkInWeekHint: {
+    en: "Try another week, or check whether the reports for these days have been filed.",
+    es: "Prueba otra semana, o revisa si ya enviaron los reportes de esos días.",
+  },
+  unknownPerson: { en: "That person is not on the roster.", es: "Esa persona no está en la lista." },
+  unknownPersonHint: {
+    en: "Only people on the roster have a history. A name typed into one report is a name on that report, not a person to follow.",
+    es: "Solo las personas de la lista tienen historial. Un nombre escrito en un reporte es un nombre en ese reporte, no una persona a la que seguir.",
+  },
+  jobsThatDay: { en: "Jobs", es: "Trabajos" },
+  seeAllReports: { en: "All their reports", es: "Todos sus reportes" },
+  openReport: { en: "Open the report", es: "Abrir el reporte" },
+  viewWeek: { en: "See this person's week", es: "Ver la semana de esta persona" },
+
   // Not wired to a deployment
   unconfigured: {
     en: "This server is not set up to open the console.",

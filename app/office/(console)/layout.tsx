@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { officeAccess } from "@/lib/officeSession";
 import { tc } from "@/lib/i18n";
+import { ConsoleNav } from "@/components/office/ConsoleNav";
 import { SignOutButton } from "@/components/office/SignOutButton";
 import { Unconfigured } from "@/components/office/Unconfigured";
 
@@ -23,19 +24,26 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col">
       <header className="sticky top-0 z-20 border-b border-[color:var(--line)] bg-[color:var(--surface-sunk)]/90 backdrop-blur">
-        <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        {/* Four things on one line at 375px is one too many, so the pieces that
+            repeat themselves give way first: the "Office" eyebrow, and the
+            brand, which on a phone says the same thing as the tab already
+            highlighted next to it. Nothing wraps — a header that reflows into
+            three lines pushes the day off the screen. */}
+        <div className="flex items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6">
           <Link
             href="/office"
-            className="flex items-baseline gap-2 rounded-md text-[15px] font-bold tracking-tight"
+            className="hidden shrink-0 items-baseline gap-2 whitespace-nowrap rounded-md text-[15px] font-bold tracking-tight sm:flex"
           >
             {tc("company")}
-            <span className="text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--ink-muted)]">
+            <span className="hidden text-xs font-medium uppercase tracking-[0.14em] text-[color:var(--ink-muted)] sm:inline">
               {tc("office")}
             </span>
           </Link>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-[color:var(--ink-muted)] sm:inline">
+          <ConsoleNav />
+
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="hidden text-sm text-[color:var(--ink-muted)] lg:inline">
               {access.identity.name}
             </span>
             <SignOutButton label={tc("signOut")} />

@@ -3,7 +3,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { convexServer } from "@/lib/convexServer";
 import { CONSOLE_LANG, tc } from "@/lib/i18n";
-import { longDate } from "@/lib/officeDate";
+import { endOfWeek, longDate, startOfWeek } from "@/lib/officeDate";
 import { clockTime, filedAtTime, hours, moneyExact } from "@/lib/officeFormat";
 import { FlagChips, StatusChip, type ReportStatus } from "@/components/office/chips";
 import { Description } from "@/components/office/Description";
@@ -36,6 +36,16 @@ const locale = LOCALE[CONSOLE_LANG] ?? "en-US";
 /** Catalog labels arrive in both languages; the console reads one. */
 function label(l10n: { en: string; es: string }): string {
   return l10n[CONSOLE_LANG];
+}
+
+/**
+ * A crew member's week, opened on the week this report falls in rather than on
+ * the current one — a report from last month is read to ask about last month.
+ * The range is spelled out in the URL so the link says what it will show.
+ */
+function weekLinkFor(personId: string, date: string): string {
+  const range = new URLSearchParams({ from: startOfWeek(date), to: endOfWeek(date) });
+  return `/office/personas/${encodeURIComponent(personId)}?${range.toString()}`;
 }
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -144,11 +154,25 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                 {crewDays.map((row) => (
                   <tr key={row._id} className="border-b border-[color:var(--line)] last:border-0">
                     <td className="py-2 pr-3 font-medium">
-                      {row.name}
-                      {row.personId === null && (
-                        <span className="ml-2 text-xs font-normal text-[color:var(--ink-muted)]">
-                          {tc("notOnRoster")}
-                        </span>
+                      {/* A roster name opens that man's week — "how many hours
+                          has he had" is the question this row provokes. A name
+                          the foreman typed in has no history to open: it is a
+                          name on one report, not a person. */}
+                      {row.personId === null ? (
+                        <>
+                          {row.name}
+                          <span className="ml-2 text-xs font-normal text-[color:var(--ink-muted)]">
+                            {tc("notOnRoster")}
+                          </span>
+                        </>
+                      ) : (
+                        <Link
+                          href={weekLinkFor(row.personId, report.date)}
+                          title={tc("viewWeek")}
+                          className="rounded-md underline decoration-[color:var(--line)] underline-offset-4 transition hover:decoration-[color:var(--ink)]"
+                        >
+                          {row.name}
+                        </Link>
                       )}
                     </td>
                     <td className="py-2 pr-3 text-[color:var(--ink-muted)]">

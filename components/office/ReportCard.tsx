@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { tc } from "@/lib/i18n";
+import { CONSOLE_LANG, tc } from "@/lib/i18n";
+import { shortDate } from "@/lib/officeDate";
 import { filedAtTime, hours, moneyExact } from "@/lib/officeFormat";
 import { FlagChips, StatusChip, type ReportStatus } from "./chips";
 
@@ -20,15 +21,22 @@ export type Card = {
   reviewNote: string | null;
 };
 
+const LOCALE: Record<string, string> = { en: "en-US", es: "es-US" };
+
 /**
  * One report, as a line you can read without opening it.
  *
  * The whole card is the link. A PM scanning thirty of these at 5pm should not
  * have to find a small target inside each one, and "open the report" is the
  * only thing a card does.
+ *
+ * `showDate` is off on the day board, where every card is the same day and
+ * printing it thirty times says nothing, and on in a search, where a list that
+ * spans a month without naming the days is unreadable.
  */
-export function ReportCard({ card }: { card: Card }) {
+export function ReportCard({ card, showDate }: { card: Card; showDate?: boolean }) {
   const crewHours = hours(card.crewHours);
+  const locale = LOCALE[CONSOLE_LANG] ?? "en-US";
 
   return (
     <li>
@@ -40,6 +48,7 @@ export function ReportCard({ card }: { card: Card }) {
           <div className="min-w-0">
             <h3 className="truncate text-[15px] font-bold tracking-tight">{card.clientName}</h3>
             <p className="mt-0.5 truncate text-sm text-[color:var(--ink-muted)]">
+              {showDate && <span className="font-medium">{shortDate(card.date, locale)} · </span>}
               {card.jobNumbers.length > 0
                 ? `${tc("jobShort")} ${card.jobNumbers.join(" · ")}`
                 : tc("nothingRecorded")}

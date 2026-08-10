@@ -152,6 +152,19 @@ Donde el PM lee el día: los cuatro números, **quién no entregó**, y cada rep
 abierto entero con **Aprobar** y **Devolver con nota**. Está en inglés; el asistente
 de campo sigue en español.
 
+Y dos pantallas más para todo lo que no es hoy:
+
+- **`/office/reportes`** — buscar por rango de fechas, cliente, número de trabajo,
+  capataz, persona de cuadrilla y estado. Los filtros viven en la URL, así que una
+  búsqueda es un link que se manda por WhatsApp y llega mostrando lo mismo. `/`
+  salta al buscador. Texto libre sobre las descripciones todavía no: eso necesita
+  un search index de Convex y es su propia decisión.
+- **`/office/personas/[personId]`** — la semana de una persona, de lunes a domingo,
+  armada desde `crewDays`. Suma las horas que **escribió el capataz** y cuenta
+  aparte los días en que nadie las anotó, que es lo que la nómina necesita saber
+  antes de pagar. Se llega desde el nombre en la cuadrilla de cualquier reporte, o
+  desde la lista de "Faltan por entregar".
+
 ### Qué necesita para abrir
 
 Dos variables, y la consola te dice cuál falta en vez de mostrarte un día vacío:
@@ -215,7 +228,9 @@ app/
     (console)/
       layout.tsx              la puerta aplicada: todo lo de adentro está detrás
       page.tsx                el día
+      reportes/                buscar: rango, cliente, job #, capataz, persona
       reportes/[id]/          un reporte, entero
+      personas/[personId]/    la semana de una persona, día por día
 components/
   JobReportApp.tsx            asistente, idioma, autoguardado, envío
   DescriptionField.tsx        traductor ES⇄EN con caché
@@ -224,7 +239,7 @@ components/
   steps/                      los 6 pasos
   office/                     lo que solo usa la consola
 convex/
-  office.ts                   las cinco queries de lectura
+  office.ts                   las queries de lectura de la consola
   auth.ts                     PIN del capataz + contraseña de la oficina
 lib/
   catalog.ts                  personal, equipo, materiales, camiones
@@ -234,7 +249,8 @@ lib/
   summaries.ts                las reglas de lectura, sin importar Convex
   i18n.ts                     textos: UI (campo, ES) y CONSOLE (oficina, EN)
   officeSession.ts            la puerta de la consola
-  officeDate.ts               qué significa "hoy" para la oficina
+  officeDate.ts               qué significa "hoy", y dónde empieza una semana
+  officeSearch.ts             los filtros de búsqueda, leídos y escritos en la URL
   storage.ts                  borrador, idioma, última cuadrilla, cola
 ```
 

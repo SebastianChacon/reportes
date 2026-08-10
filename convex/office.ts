@@ -237,6 +237,42 @@ export const missingToday = query({
   },
 });
 
+/**
+ * Everyone who could be the answer to "who filed this".
+ *
+ * The search screen needs names to put in a menu, and it must be able to name
+ * anybody a report actually points at. That is wider than the foremen
+ * `missingToday` counts: `submittedBy` is written from whichever session filed
+ * the report, so a manager who filed one from a truck is in the data whether or
+ * not he belongs on a roster. A menu that could not name him would make his
+ * reports unfindable by the one filter meant to find them.
+ *
+ * The whole table, like `missingToday`: one row per person who has ever
+ * enrolled, bounded by the size of the company.
+ */
+export const accounts = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      userId: v.id("users"),
+      name: v.string(),
+      role: v.string(),
+      crewMemberId: v.union(v.string(), v.null()),
+    })
+  ),
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    return users
+      .map((user) => ({
+        userId: user._id,
+        name: user.name,
+        role: user.role,
+        crewMemberId: user.crewMemberId ?? null,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+});
+
 /* ------------------------------------------------------------------ */
 /* /office/reportes/[id] — one report                                  */
 /* ------------------------------------------------------------------ */

@@ -2,10 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   COMPANY_TIMEZONE,
   dateFromParam,
+  endOfWeek,
   isoDateIn,
+  isoDateOrNull,
   longDate,
   shiftDate,
+  shortDate,
+  startOfWeek,
   todayForOffice,
+  weekRange,
 } from "../officeDate";
 
 describe("todayForOffice", () => {
@@ -93,6 +98,105 @@ describe("shiftDate", () => {
   it("does not slip a day across the autumn DST change", () => {
     expect(shiftDate("2026-11-01", -1)).toBe("2026-10-31");
     expect(shiftDate("2026-11-01", 1)).toBe("2026-11-02");
+  });
+});
+
+describe("isoDateOrNull", () => {
+  it("hands back a real day untouched", () => {
+    expect(isoDateOrNull("2026-08-09")).toBe("2026-08-09");
+  });
+
+  it("answers null rather than guessing, so each screen picks its own fallback", () => {
+    expect(isoDateOrNull(undefined)).toBeNull();
+    expect(isoDateOrNull("")).toBeNull();
+    expect(isoDateOrNull("2026-02-30")).toBeNull();
+  });
+});
+
+describe("startOfWeek / endOfWeek", () => {
+  /** 2026-08-09 is a Sunday, which is the case a Sunday-start week gets wrong. */
+  it("puts Sunday at the end of its week, not the start of the next one", () => {
+    expect(startOfWeek("2026-08-09")).toBe("2026-08-03");
+    expect(endOfWeek("2026-08-09")).toBe("2026-08-09");
+  });
+
+  it("leaves a Monday where it is", () => {
+    expect(startOfWeek("2026-08-03")).toBe("2026-08-03");
+    expect(endOfWeek("2026-08-03")).toBe("2026-08-09");
+  });
+
+  it("holds together mid-week and across a month boundary", () => {
+    expect(startOfWeek("2026-08-06")).toBe("2026-08-03");
+    expect(startOfWeek("2026-09-01")).toBe("2026-08-31");
+    expect(endOfWeek("2026-08-31")).toBe("2026-09-06");
+  });
+
+  it("is always seven days long, DST week included", () => {
+    // The week of the spring change: 23 hours in it, still seven days.
+    expect(startOfWeek("2026-03-08")).toBe("2026-03-02");
+    expect(endOfWeek("2026-03-08")).toBe("2026-03-08");
+  });
+});
+
+describe("weekRange", () => {
+  const sunday = new Date("2026-08-09T16:00:00Z");
+
+  it("defaults to the week holding today", () => {
+    expect(weekRange(undefined, undefined, sunday)).toEqual({
+      from: "2026-08-03",
+      to: "2026-08-09",
+    });
+  });
+
+  it("honours two dates as given, even when they are not a week", () => {
+    expect(weekRange("2026-07-01", "2026-07-31", sunday)).toEqual({
+      from: "2026-07-01",
+      to: "2026-07-31",
+    });
+  });
+
+  /**
+   * A backwards range matches nothing, which on screen is indistinguishable
+   * from a week the man did not work. Swapping is the only reading that can be
+   * right.
+   */
+  it("swaps a range that arrived backwards", () => {
+    expect(weekRange("2026-07-31", "2026-07-01", sunday)).toEqual({
+      from: "2026-07-01",
+      to: "2026-07-31",
+    });
+  });
+
+  it("takes one date as naming a week, so half a hand-edited URL still works", () => {
+    expect(weekRange("2026-08-05", undefined, sunday)).toEqual({
+      from: "2026-08-03",
+      to: "2026-08-09",
+    });
+    expect(weekRange(undefined, "2026-08-05", sunday)).toEqual({
+      from: "2026-08-03",
+      to: "2026-08-09",
+    });
+  });
+
+  it("ignores a malformed date instead of erroring on it", () => {
+    expect(weekRange("nonsense", "2026-08-05", sunday)).toEqual({
+      from: "2026-08-03",
+      to: "2026-08-09",
+    });
+    expect(weekRange("nonsense", "rubbish", sunday)).toEqual({
+      from: "2026-08-03",
+      to: "2026-08-09",
+    });
+  });
+});
+
+describe("shortDate", () => {
+  it("names the weekday and the day, for a row inside a week", () => {
+    expect(shortDate("2026-08-03", "en-US")).toBe("Mon, Aug 3");
+  });
+
+  it("names the day that was asked for, not the one before it", () => {
+    expect(shortDate("2026-01-01", "en-US")).toBe("Thu, Jan 1");
   });
 });
 

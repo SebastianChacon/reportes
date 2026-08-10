@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { api } from "@/convex/_generated/api";
 import { convexServer } from "@/lib/convexServer";
 import { tc, tcf } from "@/lib/i18n";
@@ -126,13 +127,20 @@ function MissingPanel({
       ) : (
         <>
           <p className="mt-1 text-sm text-[color:var(--ink-muted)]">{tc("missingHint")}</p>
-          {/* Names, not links. `/office/personas/[id]` is Step D of
-              PLAN-CONSOLA.md §8 and does not exist yet; a chip that looked
-              clickable and 404'd would be worse than a chip that does not. */}
+          {/* Each name goes to that man's week. "He did not file today" is
+              almost always followed by "what has he been doing", and the answer
+              is one click away rather than a search somebody has to construct.
+              The link is by roster id, not account id — a week is built from
+              crew rows, which is who was on the job rather than who has a PIN. */}
           <ul className="mt-3 flex flex-wrap gap-2">
             {missing.missing.map((foreman) => (
-              <li key={foreman.userId} className="chip font-semibold">
-                {foreman.name}
+              <li key={foreman.userId}>
+                <Link
+                  href={`/office/personas/${encodeURIComponent(foreman.crewMemberId)}`}
+                  className="chip font-semibold transition hover:border-[color:var(--ink-muted)]"
+                >
+                  {foreman.name}
+                </Link>
               </li>
             ))}
           </ul>
