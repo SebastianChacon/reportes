@@ -183,6 +183,25 @@ que `needs_review` se lea como "devuelto" en el teléfono.
 
 ### `/office/reportes` — Buscar
 
+> **Construida, con tres decisiones que el plan no había tomado.**
+>
+> **La ventana por defecto es de siete días**, no "todo". El rango es lo único
+> que mantiene acotada esta consulta, y una pantalla recién abierta todavía no
+> sabe qué se está buscando: una semana alcanza para "el reporte que vi el
+> martes" sin abrir con doscientas filas.
+>
+> **Media URL editada a mano sigue preguntando algo sensato.** `?from=` sin
+> `to=` extiende la ventana en vez de descartarse, y un rango al revés se da
+> vuelta — porque un rango invertido no devuelve nada, y en pantalla eso se ve
+> exactamente igual que una semana en que nadie trabajó.
+>
+> **Un estado que no existe se ignora en vez de viajar a Convex**, que lo
+> rechazaría como argumento y convertiría un bookmark viejo en una página de
+> error.
+>
+> Las reglas viven en `lib/officeSearch.ts`, sin un solo import de Convex, y se
+> prueban solas — igual que `lib/summaries.ts` del otro lado.
+
 Rango de fechas · cliente · job # · capataz · persona de cuadrilla · estado.
 Filtros pegados en la URL. `/` enfoca la búsqueda.
 
@@ -192,6 +211,19 @@ search index de Convex, es otra decisión, y se puede agregar después sin mover
 nada de lo demás.
 
 ### `/office/personas/[personId]` — La semana de una persona
+
+> **Construida.** La semana va de lunes a domingo, que es la semana en que se
+> organiza el trabajo y en que se cuenta la nómina: una salida de sábado
+> pertenece a los días que vinieron antes, no al domingo que abre la siguiente.
+>
+> **Un día sin horas se queda en blanco, nunca en cero**, y la pantalla cuenta
+> cuántos hay: la nómina no puede pagar una semana hasta que ese número sea
+> cero, así que vale más dicho que callado.
+>
+> **Solo la gente del roster tiene página.** Un nombre que el capataz escribió a
+> mano se guarda con `personId` nulo a propósito, así que ninguna URL llega a
+> uno; lo que no se reconoce dice que no está en la lista y explica por qué, en
+> vez de mostrar una semana vacía que parecería una semana sin trabajo.
 
 Semana × persona, sumada desde `crewDays`. `PLAN.md` la pone en la Fase 5 y dice
 que "probablemente justifica el proyecto entero por sí sola". Con `by_person_date`
@@ -212,6 +244,13 @@ Todas en `convex/office.ts`, todas `query`, ninguna toca `lib/calc.ts` en lectur
 | `report({ id })` | detalle | directo + `by_report` ×2 |
 | `search({ from, to, status, … })` | `/office/reportes` | `by_status_date` / `by_person_date` |
 | `personWeek({ personId, from, to })` | `/office/personas/[id]` | `by_person_date` |
+| `accounts()` | el filtro "enviado por" | la tabla `users` entera |
+
+`accounts` la agregó el paso D y es más ancha que los capataces que cuenta
+`missingToday`: `submittedBy` se escribe con la sesión que archivó el reporte,
+así que un gerente que mandó uno desde una camioneta está en los datos aunque no
+sea capataz. Un menú que no pudiera nombrarlo dejaría sus reportes fuera del
+alcance del único filtro hecho para encontrarlos.
 
 La mutation quedó como `setStatus` extendida con `note`, no como una función
 aparte: el estado y el motivo se escriben juntos o el reporte queda devuelto sin
@@ -278,8 +317,8 @@ valor de tener consola: el PM abre el mail en la camioneta y toca.
 A  Identidad del capataz + auth      ✅ hecho
 B  Queries de Convex                 ✅ hecho: sin UI, verificadas contra dev
 C  /office (el día) + detalle        ✅ hecho: contra dev, con datos sembrados
-D  Buscar + persona/semana           ← sigue
-E  Email rediseñado con link
+D  Buscar + persona/semana           ✅ hecho: contra dev, con datos sembrados
+E  Email rediseñado con link         ← sigue
 F  Auditoría: web-design-guidelines, react-best-practices, npm test
 ```
 

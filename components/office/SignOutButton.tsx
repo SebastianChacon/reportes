@@ -24,7 +24,7 @@ export function SignOutButton({ label }: { label: string }) {
         router.refresh();
         router.replace("/office/entrar");
       }}
-      className="min-h-9 rounded-lg border-[1.5px] border-[color:var(--line)] px-3 text-sm font-semibold transition hover:bg-[color:var(--accent-soft)] disabled:opacity-50"
+      className="min-h-9 whitespace-nowrap rounded-lg border-[1.5px] border-[color:var(--line)] px-3 text-sm font-semibold transition hover:bg-[color:var(--accent-soft)] disabled:opacity-50"
     >
       {label}
     </button>
