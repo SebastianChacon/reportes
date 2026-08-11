@@ -247,7 +247,7 @@ export function IdentityGate({
           {errorText() && (
             <p
               role="alert"
-              className="mb-4 rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] px-3 py-2.5 text-center text-sm font-medium text-[color:var(--color-clay-600)]"
+              className="alert mb-4 rounded-xl px-3 py-2.5 text-center text-sm font-medium text-[color:var(--danger)]"
             >
               {errorText()}
             </p>

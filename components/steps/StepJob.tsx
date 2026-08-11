@@ -41,7 +41,7 @@ function ChipList({
     <div>
       <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium">
         {label}
-        {required && <span className="ml-1 text-[color:var(--color-clay-600)]">*</span>}
+        {required && <span className="ml-1 text-[color:var(--danger)]">*</span>}
       </label>
       <div className="flex gap-2">
         <input
@@ -132,7 +132,7 @@ export function StepJob({
           <div>
             <label htmlFor={dateId} className="mb-1.5 block text-sm font-medium">
               {t("date", lang)}
-              <span className="ml-1 text-[color:var(--color-clay-600)]">*</span>
+              <span className="ml-1 text-[color:var(--danger)]">*</span>
             </label>
             <input
               id={dateId}

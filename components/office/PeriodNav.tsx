@@ -71,7 +71,7 @@ export function PeriodNav({ period, basePath }: { period: Period; basePath: stri
         <DateField name="to" label={tc("periodTo")} value={period.to} />
         <button
           type="submit"
-          className="min-h-11 rounded-lg bg-[color:var(--accent)] px-4 text-sm font-semibold text-[color:var(--accent-contrast)] transition hover:opacity-90"
+          className="min-h-11 rounded-lg bg-[color:var(--accent)] px-4 text-sm font-semibold text-[color:var(--accent-contrast)] transition hover:bg-[color:var(--accent-hover)]"
         >
           {tc("periodApply")}
         </button>

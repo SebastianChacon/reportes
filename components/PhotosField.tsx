@@ -117,7 +117,7 @@ export function PhotosField({
         </p>
       )}
       {failed > 0 && (
-        <p className="mt-2 text-xs text-[color:var(--color-clay-600)]">
+        <p className="mt-2 text-xs text-[color:var(--danger)]">
           {t("photosFailed", lang).replace("{n}", String(failed))}
         </p>
       )}

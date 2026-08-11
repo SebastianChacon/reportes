@@ -1,10 +1,5 @@
 @import "tailwindcss";
 
-@theme {
-  --color-clay-500: #f97316;
-  --color-clay-600: #ea580c;
-}
-
 :root {
   --surface: #ffffff;
   --surface-sunk: #f4f4f4;
@@ -15,6 +10,36 @@
   --accent: #111111;
   --accent-soft: #f0f0f0;
   --accent-contrast: #ffffff;
+
+  /*
+   * The lift under a pointer on a filled accent button.
+   *
+   * Its own token because the obvious ways of getting one are both wrong on a
+   * near-black fill: `brightness(1.1)` on #111111 lands on #131313 — a hover
+   * state nobody can see — and `opacity` fades the label along with the fill.
+   * A second flat colour is the only version that actually moves.
+   */
+  --accent-hover: #303030;
+
+  /*
+   * The one hue in the product, and the reason the phone is not monochrome:
+   * two times that contradict each other, a photo that did not attach, a send
+   * that failed. Everything else on this screen is ink.
+   *
+   * It used to be #ea580c, which is 3.56:1 on white — under the 4.5 floor for
+   * text, and this token is *mostly* text: 11-14px messages, read at arm's
+   * length, on a phone, outdoors, by someone wearing gloves. The one colour
+   * that exists to be noticed was the one colour that could not be read.
+   * #c2410c is 5.2:1 and still unmistakably the same orange.
+   *
+   * `--danger-soft` is the fill behind a block-level alert (see `.alert`). It
+   * keeps the message at 4.6:1 and the ink of a list inside it at 16.9:1, so
+   * an alert can carry an orange heading over black detail without either
+   * going quiet.
+   */
+  --danger: #c2410c;
+  --danger-soft: #fdf0e9;
+
   color-scheme: light;
 }
 
@@ -53,6 +78,10 @@
   --accent: #141414;
   --accent-soft: #f0f0ee;
   --accent-contrast: #ffffff;
+  /* Warm to match the greys around it, rather than the phone's neutral #303030 —
+   * the console is driven with a mouse far more than the phone is, so this is
+   * the token that gets used. */
+  --accent-hover: #31312e;
 
   /*
    * Status, which the phone has no vocabulary for — and which, without hue, has
@@ -189,6 +218,9 @@
     --accent: #f2f2f0;
     --accent-soft: #262624;
     --accent-contrast: #141414;
+    /* The hover runs the other way with the ink: on a dark screen the button
+     * that answers the pointer is the brighter one. */
+    --accent-hover: #ffffff;
 
     /* Same three signals, same lack of hue. `--attention-soft` is a step up off
      * the raised surface rather than down, because on a dark screen the thing
@@ -454,8 +486,27 @@ input[type="number"]::-webkit-inner-spin-button {
  * on a phone, in the sun, so it is border + tint, not just a red outline. */
 .field-error,
 .field-error:focus {
-  border-color: var(--color-clay-600);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-clay-600) 16%, transparent);
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 16%, transparent);
+}
+
+/*
+ * The phone's block-level alert: missing fields, times that contradict, a send
+ * that failed, a PIN that was refused.
+ *
+ * The office says this with `.notice` — a rule down the left edge, in ink,
+ * because the console has no hue to spend. The phone does, so this one is a
+ * tinted panel instead. Same job, different vocabulary, and neither is trying
+ * to be the other.
+ *
+ * Colour only. The padding, the radius and — crucially — the text colour stay
+ * at the call site, because the hierarchy inside these panels varies: the
+ * missing-fields alert wants an orange heading over an ink list, and a class
+ * that set `color` would turn the list orange too and flatten it.
+ */
+.alert {
+  border: 1.5px solid var(--danger);
+  background: var(--danger-soft);
 }
 
 .card {

@@ -24,7 +24,7 @@ cómo se usa — porque cada mitad se puede soltar sin la otra si hace falta par
 medias.
 
 La app del teléfono no se toca. Ese formulario se lee al sol, en una obra, y su
-señal más fuerte es el naranja de `--color-clay-600` cuando dos horas se
+señal más fuerte es el naranja de `--danger` cuando dos horas se
 contradicen. Quitarle el color a esa pantalla sería empeorarla por coherencia,
 que es la peor razón que hay.
 

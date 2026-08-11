@@ -109,7 +109,7 @@ export function SignInForm() {
         <button
           type="submit"
           disabled={busy}
-          className="mt-5 min-h-11 w-full rounded-xl bg-[color:var(--accent)] px-4 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100"
+          className="mt-5 min-h-11 w-full rounded-xl bg-[color:var(--accent)] px-4 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition enabled:hover:bg-[color:var(--accent-hover)] active:scale-[0.99] disabled:opacity-50 disabled:active:scale-100"
         >
           {busy ? tc("signingIn") : tc("signIn")}
         </button>
