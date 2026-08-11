@@ -52,7 +52,7 @@ export type DaySummary = {
  * Juans, and it is still the better error — the alternative counts one man twice
  * on a headcount the office reads as how many people were out today.
  */
-function personKey(member: { personId: string | null; name: string }): string {
+export function personKey(member: { personId: string | null; name: string }): string {
   if (member.personId) return `id:${member.personId}`;
   return `name:${member.name.trim().toLowerCase()}`;
 }

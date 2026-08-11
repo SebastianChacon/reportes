@@ -196,6 +196,17 @@ export const userFields = {
 
   enrolledAt: v.string(),
   lastSeenAt: v.optional(v.string()),
+
+  /**
+   * Set only by `convex/seed.ts`, and read only by `seed:clear`.
+   *
+   * Without it, "remove the demo data" would have to decide which foreman
+   * accounts to delete by matching names against a list — and the day a real
+   * Michael Guadron enrols with the same roster id, that command deletes a real
+   * person's account. A flag written at creation is the only thing that can tell
+   * the two apart, and an account that was never seeded simply does not have it.
+   */
+  demo: v.optional(v.boolean()),
 };
 
 /** A crew row as the phone sends it — `reportId` is attached by the mutation. */

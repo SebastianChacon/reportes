@@ -53,6 +53,43 @@
   --warn: #8a4b12;
   --warn-soft: #fbeee1;
 
+  /*
+   * Chart colour.
+   *
+   * Two categorical slots and no more, because no chart in the summary carries
+   * more than two series — which is not a limitation, it is the finding: every
+   * question worth asking here is "ours against theirs".
+   *
+   * The pair is validated against this project's own chart surface (#ffffff
+   * light, #1d1c16 dark) rather than against a reference surface: adjacent CVD
+   * ΔE 9.2 / 9.4, normal-vision ΔE 24.0 / 20.9, both clear of the floors.
+   *
+   * One semantic rule holds across every chart on the screen, and it is what
+   * makes four charts read as one page:
+   *
+   *   --viz-ours    the company's own, and the productive half
+   *                 (on-site hours · owned machines · material from the yard)
+   *   --viz-theirs  what leaves the company
+   *                 (driving · rentals · anything bought for the job)
+   *
+   * After the first chart nobody has to read the legend again.
+   */
+  --viz-ours: #2a78d6;
+  --viz-theirs: #eb6834;
+  --viz-grid: #e6e5df;
+  --viz-track: #efeee9;
+
+  /*
+   * One hue, light to dark: the heat map's cells are magnitude, not identity.
+   * "No report at all" is deliberately NOT a step on this ramp — it is drawn
+   * hollow, because an absence is not a small amount.
+   */
+  --viz-seq-1: #9ec5f4;
+  --viz-seq-2: #6da7ec;
+  --viz-seq-3: #3987e5;
+  --viz-seq-4: #256abf;
+  --viz-seq-5: #104281;
+
   color-scheme: light;
   background: var(--surface-sunk);
   color: var(--ink);
@@ -78,8 +115,73 @@
     --warn: #e0a35f;
     --warn-soft: #2c2117;
 
+    /* The same two hues, stepped for the dark surface and re-validated against
+     * it — not the light values flipped, which would drop both below 3:1. */
+    --viz-ours: #3987e5;
+    --viz-theirs: #d95926;
+    --viz-grid: #2e2c25;
+    --viz-track: #26251e;
+
+    /* The ramp runs the other way here: on a dark surface the deep blue is the
+     * one that recedes, so "more" is lighter. */
+    --viz-seq-1: #184f95;
+    --viz-seq-2: #256abf;
+    --viz-seq-3: #3987e5;
+    --viz-seq-4: #6da7ec;
+    --viz-seq-5: #9ec5f4;
+
     color-scheme: dark;
   }
+}
+
+/*
+ * The hover layer, in CSS.
+ *
+ * Every mark on the summary is focusable and carries its own tooltip, so the
+ * keyboard sees exactly what the mouse sees — the usual failure of a chart is a
+ * value that only exists inside a mouse event. Nothing here is gated behind it
+ * either: every number in a tooltip is also in the table under the chart.
+ */
+.viz-mark {
+  position: relative;
+  display: block;
+}
+
+.viz-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: none;
+  width: max-content;
+  max-width: 15rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--ink);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.16);
+  pointer-events: none;
+}
+
+.viz-mark:hover > .viz-tip,
+.viz-mark:focus-visible > .viz-tip {
+  display: block;
+}
+
+/* A row of marks near the left or right edge would otherwise push its tooltip
+ * off the card. These two pin it inside instead of centring it. */
+.viz-tip-start {
+  left: 0;
+  transform: none;
+}
+.viz-tip-end {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 /*

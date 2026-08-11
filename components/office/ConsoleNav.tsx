@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { tc } from "@/lib/i18n";
 
 /**
- * The two places the console goes.
+ * The three places the console goes, in the order the questions get asked:
+ * what happened today, where did the month go, and where is that one report.
  *
  * A client component only so the current page can say it is the current page —
  * `aria-current` rather than colour alone, so the answer to "where am I" does
@@ -13,6 +14,7 @@ import { tc } from "@/lib/i18n";
  */
 const LINKS = [
   { href: "/office", label: "navDay" },
+  { href: "/office/resumen", label: "navSummary" },
   { href: "/office/reportes", label: "navSearch" },
 ] as const;
 
