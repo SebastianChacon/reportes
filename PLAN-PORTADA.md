@@ -179,6 +179,58 @@ interfaz.
   teléfono abra el asistente directo. Eso es trabajo aparte (hoy no hay
   `public/` ni manifiesto; ver PLAN.md §3).
 
+### Paso 7 — el login ya viene lleno, y solo hay que dar Entrar
+
+Pedido: que al llegar a `/office/entrar` el correo y la contraseña ya estén
+puestos, y que entrar sea un solo clic.
+
+**La distinción que decide todo esto.** Precargar la contraseña **real** de la
+oficina significa mandarla en el JavaScript a todo el que abra la página: el
+navegador tiene que tenerla para poder escribirla en el campo. Eso no es una
+puerta más floja, es no tener puerta — cualquiera con la URL entra, y la
+contraseña queda además en el HTML que el navegador cachea y que cualquier
+buscador que llegue a la página puede indexar. Así que lo que se precarga es la
+**cuenta de demostración**, cuyas credenciales ya están en git desde que existe
+el seed:
+
+```
+convex/seed.ts:43   demo@backtonature.test / demo-back-to-nature
+```
+
+Precargar eso no mueve ningún secreto a ningún lado nuevo. Precargar el otro par
+sí, y por eso el plan no lo hace ni ofrece una opción para hacerlo.
+
+**Cómo:**
+
+- Las credenciales se mudan de `convex/seed.ts` a `lib/demoAccount.ts`, y las
+  dos puntas leen de ahí. `convex/seed.ts` ya importa de `../lib/` (líneas 5–7),
+  así que el camino existe y no hay que inventarlo. Un solo lugar donde vive el
+  par es lo que evita que el formulario ofrezca una contraseña que el seed ya
+  cambió — y ese fallo se vería como "la demo no entra", que es el peor momento
+  para descubrirlo.
+- El precargado se enciende con **`NEXT_PUBLIC_DEMO_SIGN_IN=1`**, y con nada
+  más. Un deployment que no la declara no precarga nada: **falla cerrado**, que
+  es la única forma segura de equivocarse acá. Poner la variable en el proyecto
+  de demostración es una línea; olvidarla en producción es el comportamiento
+  correcto.
+- `SignInForm` arranca su estado con el par en vez de con `""`, y muestra una
+  línea sobria arriba del formulario diciendo que son credenciales de
+  demostración. Sin eso, alguien va a creer que la sesión que abrió es la suya y
+  va a aprobar reportes de mentira pensando que son reales.
+- **No se auto-envía.** El pedido es "solo dar Entrar", y eso es exactamente lo
+  que queda: los campos llenos y un botón. Un formulario que se manda solo al
+  cargar también quita la única pantalla desde la cual alguien puede escribir
+  *otras* credenciales, que es lo que hace el gerente de verdad.
+- Los campos quedan editables y con su `autoComplete` intacto, así que el
+  administrador de contraseñas del gerente sigue pudiendo pisar los dos valores.
+
+**Lo que hay que verificar y hoy no sé:** si el deployment que usás para mostrar
+la consola tiene corrido `seed:demo`. Si no, la cuenta `demo@backtonature.test`
+no existe y el botón va a contestar "contraseña incorrecta" con los campos
+llenos, que es la forma más confusa posible de fallar. El paso incluye correr
+`npx convex run seed:demo` contra ese deployment, o —si preferís no sembrar
+datos— crear solo la cuenta con `auth:createOfficeAccount`.
+
 ## 6. Qué se toca
 
 ```
@@ -191,9 +243,13 @@ components/portada/Portada.tsx     nuevo → las dos puertas
 components/portada/icons.tsx       nuevo → candado (o se suma a home/icons.tsx)
 components/home/HomeShell.tsx      editado → sale Surfaces + SurfaceCard
 components/home/Inventory.tsx      editado → tabla ROUTES al día
-components/office/SignInForm.tsx   editado → ?next= validado, link de vuelta a /
+components/office/SignInForm.tsx   editado → ?next= validado, link de vuelta a /,
+                                             campos precargados en modo demo
 app/office/(console)/layout.tsx    editado → redirect conserva el destino
-lib/i18n.ts                        editado → claves nuevas en HOME
+lib/demoAccount.ts                 nuevo → el par de la demo, en un solo lugar
+convex/seed.ts                     editado → lee el par de lib/ en vez de definirlo
+lib/i18n.ts                        editado → claves nuevas en HOME y en CONSOLE
+.env.example                       editado → NEXT_PUBLIC_DEMO_SIGN_IN, documentada
 README.md                          editado → el mapa de rutas cambia
 ```
 
@@ -212,6 +268,12 @@ presentación.**
    `/office/reportes` después de entrar, no a `/office`.
 4. **El redirect abierto:** `/office/entrar?next=https://otro.sitio` tiene que
    ignorarse y caer en `/office`.
+5. **El precargado, por las dos puntas.** Con `NEXT_PUBLIC_DEMO_SIGN_IN=1`: los
+   campos llegan llenos y un solo clic entra. **Sin la variable: los campos
+   llegan vacíos**, y —lo que de verdad importa— `view-source` y el bundle de
+   JavaScript no contienen ninguna contraseña. Esto se mira, no se supone:
+   `grep -r "demo-back-to-nature" .next/static/` tiene que no devolver nada en
+   un build hecho sin la variable.
 5. A 375px y a 1440px; en claro y en oscuro; con el teclado solo (foco visible,
    orden de tabulación: idioma → reportes → administración → estado).
 6. `npm run test` y `npm run build`. Los tests que existen son de `lib/`, que
@@ -224,6 +286,13 @@ presentación.**
   quién es.
 - No unifica las tipografías ni los temas del asistente y la consola. Son dos
   superficies distintas por decisión, y la portada es el puente, no la fusión.
+- **No precarga la cuenta real de la oficina, en ningún modo.** No es una
+  omisión que se pueda completar más adelante con una variable más: la
+  contraseña tiene que llegar al navegador para poder aparecer en el campo, así
+  que toda versión de eso la publica. Si lo que molesta es que el gerente la
+  escriba cada día, la respuesta es el administrador de contraseñas —los campos
+  conservan su `autoComplete` justamente para eso— o alargar las 12 horas que ya
+  dura la cookie.
 - No arregla los P0 de PLAN.md (el outbox que nadie lee, el borrador sin versión
   de esquema, la API sin autenticación). Siguen siendo más urgentes que esta
   pantalla, y siguen abiertos.
