@@ -8,10 +8,12 @@
  * @module
  */
 
+import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
 import type * as office from "../office.js";
 import type * as photos from "../photos.js";
 import type * as reports from "../reports.js";
+import type * as seed from "../seed.js";
 import type * as validators from "../validators.js";
 
 import type {
@@ -21,10 +23,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  analytics: typeof analytics;
   auth: typeof auth;
   office: typeof office;
   photos: typeof photos;
   reports: typeof reports;
+  seed: typeof seed;
   validators: typeof validators;
 }>;
 

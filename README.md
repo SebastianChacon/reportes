@@ -152,7 +152,25 @@ Donde el PM lee el día: los cuatro números, **quién no entregó**, y cada rep
 abierto entero con **Aprobar** y **Devolver con nota**. Está en inglés; el asistente
 de campo sigue en español.
 
-Y dos pantallas más para todo lo que no es hoy:
+Y tres pantallas más para todo lo que no es hoy:
+
+- **`/office/resumen`** — a dónde se fue el mes. Cinco números con su cambio
+  contra el periodo anterior, y cuatro gráficos que contestan lo que el papel
+  estructuralmente no puede: **cuánto del día pagado se va manejando**, cuánto
+  costó lo rentado frente a lo propio, cuánto salió de la yarda frente a lo
+  comprado, qué cliente se llevó las horas, y un **mapa de calor de capataz ×
+  día** donde los huecos son días sin reporte. El periodo vive en la URL, así
+  que un resumen es un link. Ver [PLAN-GRAFICOS.md](PLAN-GRAFICOS.md).
+  - **`/office/resumen/avanzado`** — lo mismo con el eje suelto: agrupar por
+    semana, día, cliente o capataz; ordenar por cualquier columna; horas por
+    persona con los días sin horas contados aparte; y **descargar todo en CSV**.
+
+Los gráficos son **HTML y CSS**, sin librería y sin JavaScript de cliente. Los
+cuatro son barras, barras apiladas y una malla — nada de eso necesita una curva,
+y todo eso es `flex`, `grid` y un `%` de altura. Siguen siendo Server Components
+como el resto de la consola, el modo oscuro sale gratis porque están escritos
+contra las variables CSS que ya cambian solas, y cada gráfico trae debajo su
+tabla — que es lo que un PM copia y pega a un correo.
 
 - **`/office/reportes`** — buscar por rango de fechas, cliente, número de trabajo,
   capataz, persona de cuadrilla y estado. Los filtros viven en la URL, así que una
@@ -192,6 +210,32 @@ npx convex run auth:createOfficeAccount '{"email":"pm@tu-dominio.com","name":"No
 Mínimo 10 caracteres. Devuelve `null` si el correo ya tiene cuenta, así que
 re-correrlo **no** es una forma de resetearle la contraseña a alguien en silencio.
 
+### Llenarlo con datos para enseñarlo
+
+La consola tiene cuatro pantallas que sólo significan algo con el tiempo — el
+resumen, la búsqueda, la semana de una persona, el mapa de calor — y ninguna se
+le puede enseñar a nadie con los tres reportes de prueba que tiene un deployment
+nuevo. Esto lo llena:
+
+```bash
+npx convex run seed:demo
+```
+
+Doce semanas de reportes que nunca pasaron: cinco cuadrillas, de lunes a sábado,
+maquinaria propia y rentada, material de la yarda y comprado, con huecos, horas
+faltantes y días de más de 16 horas — porque datos perfectos hacen que la consola
+parezca decorativa. Crea también los capataces que faltaban (PIN `2468`) y una
+cuenta de consola, `demo@backtonature.test`.
+
+Es seguro contra un deployment que ya tiene datos reales: cada reporte que
+escribe lleva un `clientId` que empieza con `demo:` y cada cuenta lleva
+`demo: true`, así que se puede deshacer sin tocar nada más — y correrlo dos veces
+no duplica nada, porque `reports.submit` ya es idempotente sobre esa llave.
+
+```bash
+npx convex run seed:clear
+```
+
 La contraseña se verifica dentro de Convex con el mismo PBKDF2 de 100k iteraciones
 que el PIN del capataz, y con el mismo bloqueo de 15 minutos a los 5 intentos. La
 sesión dura 12 horas — no 90 días como la del teléfono — porque una consola se abre
@@ -222,12 +266,15 @@ app/
   api/auth/foreman/route.ts   enrolar / entrar con PIN → cookie
   api/auth/office/route.ts    entrar con correo y contraseña → cookie de 12 h
   api/office/status/route.ts  aprobar / devolver con nota
+  api/office/export/route.ts  la tabla avanzada como CSV (con su propia puerta)
   office/
     layout.tsx                superficie "office": modo oscuro + lang="en"
     entrar/                   la puerta — fuera del grupo protegido
     (console)/
       layout.tsx              la puerta aplicada: todo lo de adentro está detrás
       page.tsx                el día
+      resumen/                a dónde se fue el mes: 5 números y 4 gráficos
+      resumen/avanzado/       el mismo periodo con el eje suelto, y el CSV
       reportes/                buscar: rango, cliente, job #, capataz, persona
       reportes/[id]/          un reporte, entero
       personas/[personId]/    la semana de una persona, día por día
@@ -238,11 +285,19 @@ components/
   SignaturePad.tsx            firma con el dedo (canvas)
   steps/                      los 6 pasos
   office/                     lo que solo usa la consola
+  office/charts/              los gráficos: HTML y CSS, sin librería
 convex/
   office.ts                   las queries de lectura de la consola
+  analytics.ts                lo que lee el resumen: overview, breakdown, people
+  seed.ts                     llenar la base para enseñarla, y vaciarla
   auth.ts                     PIN del capataz + contraseña de la oficina
 lib/
   catalog.ts                  personal, equipo, materiales, camiones
+  analytics.ts                las reglas de agregación del resumen
+  demoData.ts                 el generador determinista de datos de demo
+  officePeriod.ts             qué periodo se está mirando, leído de la URL
+  officeBreakdown.ts          agrupar y ordenar, leídos de la URL
+  csv.ts                      filas de texto como archivo, bien escapadas
   translate.ts                glosario offline + interfaz Translator
   pdf.ts                      PDF de una página
   calc.ts                     horas, costos, avisos, campos obligatorios

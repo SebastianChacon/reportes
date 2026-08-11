@@ -655,6 +655,186 @@ export const CONSOLE = {
     es: "Necesita AUTH_SECRET para dejar entrar a alguien y NEXT_PUBLIC_CONVEX_URL para leer los reportes. Sin eso la consola mostraría un día vacío, que se ve igual que un día en que nadie trabajó.",
   },
   unconfiguredMissing: { en: "Missing:", es: "Falta:" },
+
+  /* ---------------------------------------------------------------- */
+  /* The summary (/office/resumen)                                     */
+  /* ---------------------------------------------------------------- */
+
+  navSummary: { en: "Summary", es: "Resumen" },
+  summaryTitle: { en: "The summary", es: "El resumen" },
+  summaryHint: {
+    en: "Where the work, the hours and the money went over a stretch of time.",
+    es: "A dónde se fue el trabajo, las horas y el dinero en un periodo.",
+  },
+
+  // The period, which lives in the URL so a summary is a link.
+  period: { en: "Period", es: "Periodo" },
+  periodWeek: { en: "This week", es: "Esta semana" },
+  period4w: { en: "4 weeks", es: "4 semanas" },
+  period6w: { en: "6 weeks", es: "6 semanas" },
+  periodMonth: { en: "This month", es: "Este mes" },
+  periodCustom: { en: "Pick dates", es: "Elegir fechas" },
+  periodFrom: { en: "From", es: "Desde" },
+  periodTo: { en: "To", es: "Hasta" },
+  periodApply: { en: "Apply", es: "Aplicar" },
+  periodDays: { en: "{n} days", es: "{n} días" },
+
+  vsPrevious: { en: "vs before", es: "vs antes" },
+  deltaFlat: { en: "about the same", es: "casi igual" },
+  deltaNoBase: {
+    en: "No earlier period to compare with",
+    es: "No hay periodo anterior con qué comparar",
+  },
+  seeTable: { en: "See the numbers", es: "Ver los números" },
+  vizNoData: {
+    en: "Nothing was recorded for this in the period.",
+    es: "No se registró nada de esto en el periodo.",
+  },
+  vizNotFiled: { en: "Not filed", es: "Sin reporte" },
+  vizFlagged: { en: "Needs a look", es: "Necesita revisión" },
+  vizTruncated: {
+    en: "This period holds more reports than one read can cover, so the charts are drawn from the most recent of them. Narrow the dates for an exact answer.",
+    es: "Este periodo tiene más reportes de los que cabe leer de una vez, así que los gráficos usan los más recientes. Acorta las fechas para una respuesta exacta.",
+  },
+
+  // The five numbers
+  kpiLabour: { en: "Labour hours", es: "Horas de mano de obra" },
+  kpiLabourHint: { en: "person-hours paid", es: "horas-persona pagadas" },
+  kpiTravel: { en: "Time spent driving", es: "Tiempo manejando" },
+  kpiTravelHint: { en: "of the yard-to-yard day", es: "de la jornada patio a patio" },
+  kpiMaterials: { en: "Materials", es: "Materiales" },
+  kpiMaterialsHint: { en: "material and plants", es: "material y plantas" },
+  kpiRental: { en: "Rented machine hours", es: "Horas de máquina rentada" },
+  kpiRentalHint: { en: "billed by the day", es: "se cobran por día" },
+  kpiReports: { en: "Reports filed", es: "Reportes recibidos" },
+  kpiReportsHint: { en: "one per crew per day", es: "uno por cuadrilla por día" },
+
+  // A. Hours by week
+  chartHours: { en: "Where the day goes, week by week", es: "A dónde se va la jornada, semana a semana" },
+  chartHoursHint: {
+    en: "Yard-to-yard hours, counted once per crew per day. An hour in the truck is paid at the same rate as an hour laying stone.",
+    es: "Horas de patio a patio, contadas una vez por cuadrilla por día. Una hora en la camioneta se paga igual que una hora poniendo piedra.",
+  },
+  seriesOnSite: { en: "On site", es: "En el sitio" },
+  seriesTravel: { en: "Driving", es: "Manejando" },
+
+  // B. Ours against theirs
+  chartSplit: { en: "Ours, and everyone else's", es: "Lo nuestro y lo de fuera" },
+  chartSplitHint: {
+    en: "What the company already owned against what it had to pay somebody for.",
+    es: "Lo que la empresa ya tenía contra lo que hubo que pagarle a alguien.",
+  },
+  splitEquipment: { en: "Machine hours", es: "Horas de máquina" },
+  splitMaterials: { en: "Material spend", es: "Gasto en material" },
+  seriesOwned: { en: "Ours", es: "Propia" },
+  seriesRented: { en: "Rented", es: "Rentada" },
+  seriesYard: { en: "From the yard", es: "De la yarda" },
+  seriesBought: { en: "Bought", es: "Comprado" },
+  splitUnclassified: {
+    en: "{amount} of the material total is not itemised on any line — an older report, or lines edited after filing.",
+    es: "{amount} del total de material no está desglosado en ninguna línea — un reporte viejo, o líneas editadas después de enviarlo.",
+  },
+
+  // The rentals, listed. Every row is an invoice.
+  chartRentals: { en: "What we rented", es: "Lo que rentamos" },
+  chartRentalsHint: {
+    en: "Ranked apart from the owned machines on purpose: by total hours the yard's own trimmer buries the excavator that cost real money.",
+    es: "Se listan aparte de las máquinas propias a propósito: por horas totales, la orilladora de la yarda entierra a la excavadora que sí costó dinero.",
+  },
+
+  // C. Clients
+  chartClients: { en: "Which clients took the hours", es: "Qué clientes se llevaron las horas" },
+  chartClientsHint: {
+    en: "Person-hours on the crew, every job for that client added together.",
+    es: "Horas-persona de cuadrilla, sumando todos los trabajos de ese cliente.",
+  },
+
+  // D. The calendar
+  chartCalendar: { en: "The period, day by day", es: "El periodo, día por día" },
+  chartCalendarHint: {
+    en: "One square per foreman per working day. A hollow square is a day nothing was filed — the one thing a mailbox can never show you.",
+    es: "Un cuadro por capataz por día de trabajo. Un cuadro vacío es un día sin reporte — lo único que un buzón nunca te puede enseñar.",
+  },
+
+  // What the office still has to chase
+  outstandingTitle: { en: "Still open", es: "Pendiente" },
+  outstandingNone: {
+    en: "Nothing outstanding in this period.",
+    es: "Nada pendiente en este periodo.",
+  },
+  outNeedsReview: { en: "sent back", es: "devueltos" },
+  outMissingHours: { en: "missing someone's hours", es: "sin las horas de alguien" },
+  outUnattributed: { en: "with no foreman", es: "sin capataz" },
+  outLongDays: { en: "over 16 hours", es: "de más de 16 horas" },
+  outNoCrew: { en: "with no crew", es: "sin cuadrilla" },
+
+  // Table columns
+  colWeek: { en: "Week of", es: "Semana del" },
+  colReports: { en: "Reports", es: "Reportes" },
+  colOnSite: { en: "On site", es: "En sitio" },
+  colTravel: { en: "Driving", es: "Manejando" },
+  colShare: { en: "Driving %", es: "% manejando" },
+  colCrewHours: { en: "Labour hrs", es: "Horas m.o." },
+  colClient: { en: "Client", es: "Cliente" },
+  colJobs: { en: "Job #", es: "Trabajo #" },
+  colCost: { en: "Materials", es: "Materiales" },
+  colItem: { en: "Item", es: "Artículo" },
+  colOurs: { en: "Ours", es: "Propio" },
+  colTheirs: { en: "Rented / bought", es: "Rentado / comprado" },
+  colForeman: { en: "Foreman", es: "Capataz" },
+  colDaysFiled: { en: "Days filed", es: "Días con reporte" },
+  colDaysMissed: { en: "Days missed", es: "Días sin reporte" },
+
+  /* ---------------------------------------------------------------- */
+  /* Advanced (/office/resumen/avanzado)                               */
+  /* ---------------------------------------------------------------- */
+
+  advancedTitle: { en: "Advanced", es: "Opciones avanzadas" },
+  advancedHint: {
+    en: "The same period, with the axis loose: group it by whatever you are asking about, sort it, and take it away as a spreadsheet.",
+    es: "El mismo periodo, con el eje suelto: agrúpalo por lo que estés preguntando, ordénalo, y llévatelo como hoja de cálculo.",
+  },
+  advancedOpen: { en: "Advanced options", es: "Opciones avanzadas" },
+  backToSummary: { en: "Back to the summary", es: "Volver al resumen" },
+
+  groupBy: { en: "Group by", es: "Agrupar por" },
+  groupWeek: { en: "Week", es: "Semana" },
+  groupClient: { en: "Client", es: "Cliente" },
+  groupForeman: { en: "Foreman", es: "Capataz" },
+  groupPerson: { en: "Person", es: "Persona" },
+  groupDay: { en: "Day", es: "Día" },
+
+  sortBy: { en: "Sorted by", es: "Ordenado por" },
+  exportCsv: { en: "Download as CSV", es: "Descargar como CSV" },
+  // Plain text on purpose: this one is read in a browser tab, by somebody who
+  // followed a link into a file and needs to know it is the session, not the link.
+  exportSignedOut: {
+    en: "Sign in to the office console before downloading this.",
+    es: "Entra a la consola de la oficina antes de descargar esto.",
+  },
+  exportHint: {
+    en: "Exactly the rows above, in the order they are shown — no symbols, so a spreadsheet can add them up.",
+    es: "Exactamente las filas de arriba, en el orden en que se ven — sin símbolos, para que una hoja de cálculo las pueda sumar.",
+  },
+
+  payrollTitle: { en: "Hours by person", es: "Horas por persona" },
+  payrollHint: {
+    en: "What each person was written down for over the period, and how many of their days nobody recorded hours on. Payroll cannot pay from a row whose second number is not zero.",
+    es: "Lo que se le anotó a cada persona en el periodo, y en cuántos de sus días nadie escribió las horas. Nómina no puede pagar una fila cuyo segundo número no sea cero.",
+  },
+  colDaysWorked: { en: "Days on a crew", es: "Días en cuadrilla" },
+  colHoursMissing: { en: "Days with no hours", es: "Días sin horas" },
+  colAdhoc: { en: "Written in", es: "Escrito a mano" },
+  adhocNote: {
+    en: "Names a foreman wrote in are grouped by the name itself, because they have no roster id — two crews that both wrote \"Juan\" count as one man here.",
+    es: "Los nombres que un capataz escribió a mano se agrupan por el nombre, porque no tienen id de la lista — dos cuadrillas que escribieron \"Juan\" cuentan como uno solo aquí.",
+  },
+
+  qualityTitle: { en: "What needs chasing", es: "Lo que hay que perseguir" },
+  qualityHint: {
+    en: "Every one of these is a link to the reports it counts.",
+    es: "Cada uno de estos es un link a los reportes que cuenta.",
+  },
 } as const;
 
 export type ConsoleKey = keyof typeof CONSOLE;

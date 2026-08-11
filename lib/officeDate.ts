@@ -85,6 +85,22 @@ export function endOfWeek(isoDate: string): string {
 }
 
 /**
+ * Every Monday-to-Saturday day in a range, oldest first.
+ *
+ * Sunday is left out rather than produced and then explained away. The screens
+ * that use this ask "was a report filed on this day", and a blank Sunday column
+ * would answer "no" five times a week about a day nobody was ever out.
+ */
+export function workdays(from: string, to: string): string[] {
+  const days: string[] = [];
+  for (let date = from; date <= to; date = shiftDate(date, 1)) {
+    // getUTCDay is 0 for Sunday. Noon UTC keeps the date off either boundary.
+    if (new Date(`${date}T12:00:00Z`).getUTCDay() !== 0) days.push(date);
+  }
+  return days;
+}
+
+/**
  * A Monday-to-Sunday range out of `from` and `to`, however mangled they arrive.
  *
  * One date is enough to name a week, which is what makes the URL survive being

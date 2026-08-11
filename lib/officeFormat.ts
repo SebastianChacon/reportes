@@ -41,6 +41,18 @@ export function hours(n: number | null): string | null {
   return String(Math.round(n * 100) / 100);
 }
 
+/**
+ * The same hours with the thousands separated: 4,407.5 rather than 4407.5.
+ *
+ * A day's total never needs this — nobody works four thousand hours on Tuesday.
+ * A quarter's does, and an unseparated five-digit number is read wrong often
+ * enough that it is worth the extra call.
+ */
+export function hoursGrouped(n: number | null): string | null {
+  if (n === null) return null;
+  return (Math.round(n * 100) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
 /** A 24-hour "07:15" as the office reads it. Empty stays empty. */
 export function clockTime(value: string, locale = "en-US"): string {
   if (!/^\d{2}:\d{2}$/.test(value)) return value;
