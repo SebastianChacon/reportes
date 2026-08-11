@@ -5,8 +5,15 @@ import { convexServer } from "@/lib/convexServer";
 import { CONSOLE_LANG, tc } from "@/lib/i18n";
 import { endOfWeek, longDate, startOfWeek } from "@/lib/officeDate";
 import { clockTime, filedAtTime, hours, moneyExact } from "@/lib/officeFormat";
-import { FlagChips, StatusChip, type ReportStatus } from "@/components/office/chips";
+import { Breadcrumb } from "@/components/office/Breadcrumb";
+import {
+  ApprovedStamp,
+  FlagChips,
+  StatusChip,
+  type ReportStatus,
+} from "@/components/office/chips";
 import { Description } from "@/components/office/Description";
+import { Warning } from "@/components/office/icons";
 import { ReviewActions } from "@/components/office/ReviewActions";
 
 /**
@@ -69,21 +76,17 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   return (
     <article className="flex flex-col gap-6">
       <div>
-        <Link
-          href={`/office?date=${report.date}`}
-          className="inline-flex items-center gap-1.5 rounded-md text-sm font-semibold text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M15 5l-7 7 7 7"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          {tc("backToDay")}
-        </Link>
+        {/* A breadcrumb rather than the lone "back to the day" arrow this used
+            to carry. Same destination, and it still lands on the right day —
+            but it also says where this page sits, which the arrow could not.
+            That matters here more than anywhere: this is the page people arrive
+            at from a link somebody sent them, with no history to go back to. */}
+        <Breadcrumb
+          trail={[
+            { label: tc("navDay"), href: `/office?date=${report.date}` },
+            { label: tc("crumbReport") },
+          ]}
+        />
 
         <div className="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
           <div className="min-w-0">
@@ -98,9 +101,20 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             </p>
           </div>
 
+          {/* One document on one page, which is what buys the stamp its tilt.
+              The chip is still rendered for an approved report — screen readers
+              and a greyscale print both read the word, and the stamp beside it
+              is `aria-hidden` decoration of the same fact. */}
           <div className="flex flex-wrap items-center gap-1.5">
             <FlagChips flags={report.flags} />
-            <StatusChip status={status} />
+            {status === "approved" ? (
+              <>
+                <span className="sr-only">{tc("statusApproved")}</span>
+                <ApprovedStamp />
+              </>
+            ) : (
+              <StatusChip status={status} />
+            )}
           </div>
         </div>
 
@@ -118,7 +132,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       {/* The note the office wrote, above the report rather than under it: it is
           the reason this report is open. */}
       {status === "needs_review" && report.reviewNote && (
-        <p className="border-l-2 border-[color:var(--warn)] bg-[color:var(--warn-soft)] px-4 py-3 text-[15px]">
+        <p className="notice px-4 py-3 text-[15px]">
           <span className="font-semibold">{tc("sentBackNote")}:</span> {report.reviewNote}
         </p>
       )}
@@ -186,7 +200,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                       {/* Nobody wrote it down, which is not zero — and payroll
                           acts on the difference. */}
                       {hours(row.hours) ?? (
-                        <span className="text-xs font-medium text-[color:var(--warn)]">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold">
+                          <Warning size={10} />
                           {tc("noHoursRecorded")}
                         </span>
                       )}

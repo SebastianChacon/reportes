@@ -23,7 +23,10 @@ export function Unconfigured({ missing }: { missing: string[] }) {
         {missing.length > 0 && (
           <p className="mt-4 text-sm">
             <span className="font-semibold">{tc("unconfiguredMissing")}</span>{" "}
-            <code className="font-mono text-[13px] text-[color:var(--warn)]">
+            <code
+              translate="no"
+              className="rounded bg-[color:var(--accent-soft)] px-1.5 py-0.5 font-mono text-[13px] font-semibold"
+            >
               {missing.join(" · ")}
             </code>
           </p>

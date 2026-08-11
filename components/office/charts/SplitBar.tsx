@@ -1,4 +1,4 @@
-import { fill, NoData } from "./Card";
+import { fill, NoData, onFill } from "./Card";
 
 /**
  * Part against whole, once.
@@ -37,7 +37,7 @@ export function SplitBar({ split }: { split: Split }) {
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <span className="text-sm font-semibold">{split.label}</span>
-        <span className="text-sm tabular-nums text-[color:var(--ink-muted)]">
+        <span className="figure text-sm tabular-nums text-[color:var(--ink-muted)]">
           {split.totalLabel}
         </span>
       </div>
@@ -64,20 +64,20 @@ export function SplitBar({ split }: { split: Split }) {
         <span className="flex items-center gap-1.5">
           <span
             aria-hidden="true"
-            className="h-2.5 w-2.5 rounded-[3px]"
+            className="h-3 w-3 shrink-0 rounded-[3px]"
             style={{ background: fill("ours") }}
           />
           <span className="text-[color:var(--ink-muted)]">{split.oursLabel}</span>
-          <span className="font-semibold tabular-nums">{percent(oursShare)}</span>
+          <span className="figure font-semibold tabular-nums">{percent(oursShare)}</span>
         </span>
         <span className="flex items-center gap-1.5">
           <span
             aria-hidden="true"
-            className="h-2.5 w-2.5 rounded-[3px]"
+            className="h-3 w-3 shrink-0 rounded-[3px]"
             style={{ background: fill("theirs") }}
           />
           <span className="text-[color:var(--ink-muted)]">{split.theirsLabel}</span>
-          <span className="font-semibold tabular-nums">{percent(theirsShare)}</span>
+          <span className="figure font-semibold tabular-nums">{percent(theirsShare)}</span>
         </span>
       </div>
     </div>
@@ -109,9 +109,21 @@ function Segment({
         {tip}
       </span>
       {share >= FITS_INSIDE && (
-        // The one place text may wear a fill colour's foreground: inside the
-        // mark. White clears both hues at these steps in both themes.
-        <span className="text-[11px] font-bold tabular-nums text-white">{percent(share)}</span>
+        // The one place text sits inside a mark. On solid ink it takes the
+        // inverse and needs nothing else; on the hatch it cannot — text over a
+        // hatch lands half on ink and half on gaps and is unreadable — so it
+        // carries a small plate of the surface and stays in normal ink.
+        <span
+          className={`text-[11px] font-bold tabular-nums ${
+            tone === "theirs" ? "rounded-[3px] px-1" : ""
+          }`}
+          style={{
+            color: onFill(tone),
+            ...(tone === "theirs" ? { background: "var(--surface-raised)" } : {}),
+          }}
+        >
+          {percent(share)}
+        </span>
       )}
     </div>
   );

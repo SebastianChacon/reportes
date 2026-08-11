@@ -38,12 +38,24 @@ export type Row = {
   cells: Cell[];
 };
 
+/**
+ * Four steps, not five.
+ *
+ * Grey is the right encoding here — these cells are magnitude — but it runs out
+ * of room faster than a hue does. Measured on this surface: at five steps the
+ * worst adjacent pair sits at ΔE 11.1, under the 15 floor, which is two
+ * neighbouring shades nobody can separate. At four it is 16.9 and clears.
+ *
+ * Losing a step costs less than it sounds. The tooltip and the table under the
+ * chart both carry the exact hours; the grid's job is the *shape* — where the
+ * heavy weeks are and where the holes are — and four steps draw that shape more
+ * honestly than five that blur into each other.
+ */
 const STEPS = [
   "var(--viz-seq-1)",
   "var(--viz-seq-2)",
   "var(--viz-seq-3)",
   "var(--viz-seq-4)",
-  "var(--viz-seq-5)",
 ];
 
 export function Heatmap({
@@ -126,7 +138,7 @@ export function Heatmap({
               {weeks.map((week) => (
                 <div
                   key={week.start}
-                  className="text-[10px] tabular-nums text-[color:var(--ink-muted)]"
+                  className="figure text-[10px] tabular-nums text-[color:var(--ink-muted)]"
                   style={{ width: week.days.length * 22 + (week.days.length - 1) * 2 }}
                 >
                   {weekLabel.format(new Date(`${week.start}T12:00:00Z`))}
@@ -158,15 +170,6 @@ function Square({
   const hours = cell?.crewHours ?? null;
   const filed = hours !== null;
 
-  const style: React.CSSProperties = filed
-    ? { background: STEPS[stepFor(hours, max)] }
-    : {
-        background: "var(--surface-raised)",
-        // Hollow, not pale: the border is what makes "nothing here" read as a
-        // different kind of thing rather than as the bottom of the scale.
-        boxShadow: "inset 0 0 0 1px var(--viz-grid)",
-      };
-
   return (
     <div
       tabIndex={0}
@@ -174,8 +177,8 @@ function Square({
       style={{
         width: 22,
         height: 22,
-        ...style,
-        ...(cell?.flagged ? { outline: "2px solid var(--warn)", outlineOffset: -2 } : {}),
+        background: filed ? STEPS[stepFor(hours, max)] : "var(--surface-raised)",
+        boxShadow: ringFor(filed, cell?.flagged ?? false),
       }}
     >
       <span className="viz-tip" role="tooltip">
@@ -185,9 +188,7 @@ function Square({
             ? `${formatHours(hours)} ${tc("hours")}${cell && cell.reports > 1 ? ` · ${cell.reports}` : ""}`
             : tc("vizNotFiled")}
         </span>
-        {cell?.flagged && (
-          <span className="block font-semibold text-[color:var(--warn)]">{tc("vizFlagged")}</span>
-        )}
+        {cell?.flagged && <span className="block font-semibold">{tc("vizFlagged")}</span>}
       </span>
       {/* The date is on the mark for a screen reader even though the square is
           drawn empty, so the grid is navigable rather than 185 unlabelled boxes. */}
@@ -211,7 +212,7 @@ function ScaleLegend({ max, formatHours }: { max: number; formatHours: (n: numbe
           className="h-3 w-3 rounded-[3px]"
           style={{
             background: "var(--surface-raised)",
-            boxShadow: "inset 0 0 0 1px var(--viz-grid)",
+            boxShadow: ringFor(false, false),
           }}
         />
         {tc("vizNotFiled")}
@@ -224,16 +225,25 @@ function ScaleLegend({ max, formatHours }: { max: number; formatHours: (n: numbe
             <span key={step} className="h-3 w-4 rounded-[2px]" style={{ background: step }} />
           ))}
         </span>
-        <span className="tabular-nums">
+        <span className="figure tabular-nums">
           {formatHours(max)} {tc("hours")}
         </span>
       </span>
 
+      {/* 16px rather than the 12px the other keys use. The doubled ring eats
+          3.5px of every edge, so at 12px the two rings meet in the middle and
+          the swatch reads as a solid blob; 16 leaves enough fill for the ring to
+          look like a ring, without towering over the keys beside it. */}
       <span className="flex items-center gap-1.5">
         <span
           aria-hidden="true"
-          className="h-3 w-3 rounded-[3px]"
-          style={{ outline: "2px solid var(--warn)", outlineOffset: -2 }}
+          className="rounded-[3px]"
+          style={{
+            width: 16,
+            height: 16,
+            background: "var(--viz-seq-2)",
+            boxShadow: ringFor(true, true),
+          }}
         />
         {tc("vizFlagged")}
       </span>
@@ -241,7 +251,34 @@ function ScaleLegend({ max, formatHours }: { max: number; formatHours: (n: numbe
   );
 }
 
-/** Which of the five steps a value lands on. Empty never reaches here. */
+/**
+ * The rings a cell wears: "nothing was filed", "something was flagged", both.
+ *
+ * A flagged cell used to take a coloured outline, which worked because the
+ * colour had nothing to do with the fill underneath. In one ink it does, and a
+ * single ring cannot win against a ramp: ink is invisible on the darkest step,
+ * and the surface colour is invisible on the lightest.
+ *
+ * So it wears **two**, one inside the other. Whichever end of the ramp the cell
+ * landed on, one of the two rings is contrasting against it — and a doubled ring
+ * reads as deliberate at 22px rather than as a rendering artefact.
+ */
+function ringFor(filed: boolean, flagged: boolean): string | undefined {
+  // Hollow, not pale: the border is what makes "nothing here" read as a
+  // different kind of thing rather than as the bottom of the scale.
+  // Its own token, not `--line` and not `--viz-grid`: those are tuned to recede,
+  // and this ring has to stay visibly ahead of the ramp's faintest step in both
+  // themes. The hole is the finding this whole chart exists to show.
+  const hollow = "inset 0 0 0 1px var(--viz-hollow)";
+  const flag = "inset 0 0 0 2px var(--surface-raised), inset 0 0 0 3.5px var(--ink)";
+
+  if (flagged && !filed) return `${flag}, ${hollow}`;
+  if (flagged) return flag;
+  if (!filed) return hollow;
+  return undefined;
+}
+
+/** Which of the four steps a value lands on. Empty never reaches here. */
 function stepFor(value: number, max: number): number {
   if (max <= 0) return 0;
   const at = Math.ceil((value / max) * STEPS.length) - 1;

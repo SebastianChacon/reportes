@@ -5,6 +5,8 @@ import { convexServer } from "@/lib/convexServer";
 import { CONSOLE_LANG, tc } from "@/lib/i18n";
 import { longDate, shiftDate, shortDate, startOfWeek, todayForOffice, weekRange } from "@/lib/officeDate";
 import { hours } from "@/lib/officeFormat";
+import { Breadcrumb } from "@/components/office/Breadcrumb";
+import { Warning } from "@/components/office/icons";
 
 /**
  * One person's week.
@@ -53,6 +55,12 @@ export default async function PersonPage({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* This page is reached from three different places — the day board's
+          "not filed" chips, the calendar's row labels, and a report's crew
+          table — so the trail names the day board rather than pretending to
+          know which one it was. It is the screen every route here starts at. */}
+      <Breadcrumb trail={[{ label: tc("navDay"), href: "/office" }, { label: name }]} />
+
       <WeekNav personId={personId} name={name} rostered={rostered} from={from} to={to} />
 
       <section aria-label={tc("personTitle")}>
@@ -70,7 +78,7 @@ export default async function PersonPage({
             into a third of a phone screen stretches all three cards to match
             it, and the two numbers beside it end up mostly white space. */}
         {week.daysMissingHours > 0 && (
-          <p className="mt-2 text-sm text-[color:var(--warn)]">{tc("daysMissingHoursHint")}</p>
+          <p className="notice mt-2 text-sm">{tc("daysMissingHoursHint")}</p>
         )}
       </section>
 
@@ -94,7 +102,10 @@ export default async function PersonPage({
                 </h2>
 
                 {day.hours === null ? (
-                  <span className="text-sm font-semibold text-[color:var(--warn)]">
+                  // No hue to say "this is the bad one", so it says it in words
+                  // with the warning glyph — which is also what it always meant.
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold">
+                    <Warning size={12} />
                     {tc("noHoursRecorded")}
                   </span>
                 ) : (
@@ -128,7 +139,8 @@ export default async function PersonPage({
                     )}
                     <span className="ml-auto shrink-0 tabular-nums">
                       {hours(entry.hours) ?? (
-                        <span className="text-xs font-medium text-[color:var(--warn)]">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold">
+                          <Warning size={10} />
                           {tc("noHoursRecorded")}
                         </span>
                       )}
@@ -250,18 +262,16 @@ function WeekLink({
 }
 
 function Stat({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
+  // The tile that is asking for something takes the rule down its left edge, the
+  // same one every attention block on the console wears. The number itself does
+  // not change weight — it is already the boldest thing in the card, and making
+  // it bolder still would just make the three tiles look mismatched.
   return (
-    <div className={`card p-4 ${warn ? "border-[color:var(--warn)]/50" : ""}`}>
+    <div className={`card p-4 ${warn ? "card-attention" : ""}`}>
       <dt className="text-xs font-medium uppercase tracking-wide text-[color:var(--ink-muted)]">
         {label}
       </dt>
-      <dd
-        className={`mt-1 text-2xl font-bold tracking-tight tabular-nums sm:text-3xl ${
-          warn ? "text-[color:var(--warn)]" : ""
-        }`}
-      >
-        {value}
-      </dd>
+      <dd className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{value}</dd>
     </div>
   );
 }

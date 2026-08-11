@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CONSOLE_LANG, tc } from "@/lib/i18n";
 import { shortDate } from "@/lib/officeDate";
 import { filedAtTime, hours, moneyExact } from "@/lib/officeFormat";
+import { CardApprove } from "./CardApprove";
 import { FlagChips, StatusChip, type ReportStatus } from "./chips";
 
 export type Card = {
@@ -34,15 +35,40 @@ const LOCALE: Record<string, string> = { en: "en-US", es: "es-US" };
  * printing it thirty times says nothing, and on in a search, where a list that
  * spans a month without naming the days is unreadable.
  */
-export function ReportCard({ card, showDate }: { card: Card; showDate?: boolean }) {
+export function ReportCard({
+  card,
+  showDate,
+  approvable,
+}: {
+  card: Card;
+  showDate?: boolean;
+  /**
+   * Adds the approve row under the card. On the day board, where a PM is
+   * working through today's pile — not in a search, which is somebody looking
+   * for one particular report rather than clearing a queue.
+   */
+  approvable?: boolean;
+}) {
   const crewHours = hours(card.crewHours);
   const locale = LOCALE[CONSOLE_LANG] ?? "en-US";
 
+  // The button cannot live inside the anchor — a button nested in a link is
+  // invalid, and browsers disagree about which one a click belongs to. So the
+  // card is the container, the link fills its body, and the action sits in a
+  // row of its own underneath.
+  //
+  // The link only rounds the corners it actually owns. With a row below it, a
+  // fully rounded link would leave two pale notches either side of the divider
+  // the moment the card is hovered.
+  const withRow = Boolean(approvable) && card.status !== "approved";
+
   return (
-    <li>
+    <li className="card">
       <Link
         href={`/office/reportes/${card.id}`}
-        className="card block p-4 transition hover:border-[color:var(--ink-muted)]"
+        className={`block p-4 transition hover:bg-[color:var(--accent-soft)] ${
+          withRow ? "rounded-t-2xl" : "rounded-2xl"
+        }`}
       >
         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0">
@@ -83,11 +109,17 @@ export function ReportCard({ card, showDate }: { card: Card; showDate?: boolean 
         {/* The note the office wrote, on the card — a report that was sent back
             should say why without being opened, or it reads as merely late. */}
         {card.status === "needs_review" && card.reviewNote && (
-          <p className="mt-3 border-l-2 border-[color:var(--warn)] bg-[color:var(--warn-soft)] px-3 py-2 text-sm text-[color:var(--ink)]">
+          <p className="notice mt-3 text-sm">
             <span className="font-semibold">{tc("sentBackNote")}:</span> {card.reviewNote}
           </p>
         )}
       </Link>
+
+      {withRow && (
+        <div className="no-print border-t border-[color:var(--line)] px-4 py-2.5">
+          <CardApprove reportId={card.id} />
+        </div>
+      )}
     </li>
   );
 }

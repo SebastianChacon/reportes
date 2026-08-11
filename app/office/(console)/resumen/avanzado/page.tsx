@@ -16,6 +16,7 @@ import { shortDate } from "@/lib/officeDate";
 import { hoursGrouped, money, moneyExact } from "@/lib/officeFormat";
 import { parsePeriod, periodQuery } from "@/lib/officePeriod";
 import { PeriodNav } from "@/components/office/PeriodNav";
+import { Breadcrumb } from "@/components/office/Breadcrumb";
 
 /**
  * Advanced.
@@ -64,21 +65,14 @@ export default async function AdvancedPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Link
-          href={`/office/resumen?${query}`}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M15 5l-7 7 7 7"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          {tc("backToSummary")}
-        </Link>
+        {/* The period rides the link back, so returning to the summary shows the
+            same stretch of time this page was reading — not the default month. */}
+        <Breadcrumb
+          trail={[
+            { label: tc("navSummary"), href: `/office/resumen?${query}` },
+            { label: tc("crumbAdvanced") },
+          ]}
+        />
         <h1 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">{tc("advancedTitle")}</h1>
         <p className="mt-0.5 text-sm text-[color:var(--ink-muted)]">{tc("advancedHint")}</p>
       </div>
@@ -135,9 +129,7 @@ export default async function AdvancedPage({
         </div>
 
         {result.truncated && (
-          <p className="rounded-lg border border-[color:var(--warn)]/40 bg-[color:var(--warn-soft)] px-3 py-2 text-sm font-medium text-[color:var(--warn)]">
-            {tc("vizTruncated")}
-          </p>
+          <p className="notice text-sm">{tc("vizTruncated")}</p>
         )}
 
         <Pivot
@@ -199,10 +191,14 @@ export default async function AdvancedPage({
                   <Td>{hoursGrouped(person.hours)}</Td>
                   <Td>{person.daysWorked}</Td>
                   {/* The column payroll acts on. Zero is silent; anything else
-                      is somebody who has to be asked before a cheque is cut. */}
+                      is somebody who has to be asked before a cheque is cut.
+                      With no hue left, the emphasis is the weight: a count sits
+                      in full ink and bold, a dash recedes to muted. */}
                   <td
-                    className={`py-2 pl-4 text-right font-semibold tabular-nums ${
-                      person.daysMissingHours > 0 ? "text-[color:var(--warn)]" : ""
+                    className={`py-2 pl-4 text-right tabular-nums ${
+                      person.daysMissingHours > 0
+                        ? "font-bold"
+                        : "font-normal text-[color:var(--ink-muted)]"
                     }`}
                   >
                     {person.daysMissingHours > 0 ? person.daysMissingHours : "—"}

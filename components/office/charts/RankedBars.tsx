@@ -45,7 +45,7 @@ export function RankedBars({ bars, tone = "ours" }: { bars: Bar[]; tone?: "ours"
             </span>
             {/* The value at the tip of the bar, in a text token — never in the
                 series colour, which is unreadable as small text. */}
-            <span className="shrink-0 text-sm font-semibold tabular-nums">{bar.valueLabel}</span>
+            <span className="shrink-0 text-sm font-semibold tabular-nums figure">{bar.valueLabel}</span>
           </div>
 
           <div

@@ -18,15 +18,34 @@ const LINKS = [
   { href: "/office/reportes", label: "navSearch" },
 ] as const;
 
+/**
+ * Which tab owns a URL.
+ *
+ * `/office` has to match exactly — it is the prefix of every other route here,
+ * so a prefix test would light "The day" on all of them.
+ *
+ * The rest claim their subtree. Before, the test was exact everywhere, which
+ * meant `/office/resumen/avanzado` lit no tab at all: the reader was two levels
+ * inside the summary and the navigation had nothing to say about where they
+ * were.
+ *
+ * A single report is still nobody's: it is reached from the day and from the
+ * search alike, so neither gets to claim it. That was a deliberate choice and it
+ * stays one — the breadcrumb above the report is what orients that page.
+ */
+export function owns(pathname: string, href: string): boolean {
+  if (href === "/office") return pathname === href;
+  if (href === "/office/reportes") return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function ConsoleNav() {
   const pathname = usePathname();
 
   return (
     <nav aria-label={tc("office")} className="flex items-center gap-1">
       {LINKS.map((link) => {
-        // A report's own page belongs to search only in the URL; it is reached
-        // from either side, so neither tab claims it.
-        const current = pathname === link.href;
+        const current = owns(pathname, link.href);
 
         return (
           <Link

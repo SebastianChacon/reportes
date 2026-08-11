@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { deskFonts } from "@/app/fonts";
 
 export const metadata: Metadata = {
   title: "Panel — Back to Nature",
@@ -13,8 +14,8 @@ export const metadata: Metadata = {
  */
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f6f5" },
-    { media: "(prefers-color-scheme: dark)", color: "#100f0b" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f4f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d0d0d" },
   ],
 };
 
@@ -28,7 +29,7 @@ export const viewport: Viewport = {
  */
 export default function HomeLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div data-surface="home" className="min-h-dvh">
+    <div data-surface="home" className={`${deskFonts} min-h-dvh`}>
       {children}
     </div>
   );

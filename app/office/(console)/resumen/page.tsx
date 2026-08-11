@@ -7,6 +7,7 @@ import { shortDate } from "@/lib/officeDate";
 import { parsePeriod, periodQuery, previousPeriod } from "@/lib/officePeriod";
 import { hoursGrouped, money, moneyExact } from "@/lib/officeFormat";
 import { PeriodNav } from "@/components/office/PeriodNav";
+import { Check, Chevron } from "@/components/office/icons";
 import { ChartCard } from "@/components/office/charts/Card";
 import { StatTile } from "@/components/office/charts/StatTile";
 import { StackedColumns } from "@/components/office/charts/StackedColumns";
@@ -85,9 +86,7 @@ export default async function SummaryPage({
       {/* Said out loud rather than trimmed in silence — charts drawn from part
           of the data would answer a different question than the one asked. */}
       {now.truncated && (
-        <p className="rounded-lg border border-[color:var(--warn)]/40 bg-[color:var(--warn-soft)] px-3 py-2 text-sm font-medium text-[color:var(--warn)]">
-          {tc("vizTruncated")}
-        </p>
+        <p className="notice text-sm">{tc("vizTruncated")}</p>
       )}
 
       {/* ---------------- The five numbers ---------------- */}
@@ -324,15 +323,7 @@ export default async function SummaryPage({
             {tc("advancedHint")}
           </span>
         </span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
-          <path
-            d="M9 5l7 7-7 7"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <Chevron className="shrink-0" />
       </Link>
     </div>
   );
@@ -360,44 +351,52 @@ function Outstanding({
 }) {
   const range = `from=${period.from}&to=${period.to}`;
 
+  // All five, not one. Four of these used to be plain text because the search
+  // had no filter that could answer them — which meant the console knew there
+  // were twelve reports missing somebody's hours and offered no way to see
+  // which twelve. The `issue` filter exists for exactly this.
   const items = [
-    { n: counts.needsReview, label: tc("outNeedsReview"), href: `/office/reportes?${range}&status=needs_review` },
-    { n: counts.missingHours, label: tc("outMissingHours"), href: null },
-    { n: counts.longDays, label: tc("outLongDays"), href: null },
-    { n: counts.noCrew, label: tc("outNoCrew"), href: null },
-    { n: counts.unattributed, label: tc("outUnattributed"), href: null },
+    {
+      n: counts.needsReview,
+      label: tc("outNeedsReview"),
+      href: `/office/reportes?${range}&status=needs_review`,
+    },
+    {
+      n: counts.missingHours,
+      label: tc("outMissingHours"),
+      href: `/office/reportes?${range}&issue=noHours`,
+    },
+    { n: counts.longDays, label: tc("outLongDays"), href: `/office/reportes?${range}&issue=longDay` },
+    { n: counts.noCrew, label: tc("outNoCrew"), href: `/office/reportes?${range}&issue=noCrew` },
+    {
+      n: counts.unattributed,
+      label: tc("outUnattributed"),
+      href: `/office/reportes?${range}&issue=unattributed`,
+    },
   ].filter((item) => item.n > 0);
 
   return (
-    <section className={`card p-4 sm:p-5 ${items.length > 0 ? "border-[color:var(--warn)]/50" : ""}`}>
+    <section className={`card p-4 sm:p-5 ${items.length > 0 ? "card-attention" : ""}`}>
       <h2 className="text-[15px] font-bold tracking-tight">{tc("outstandingTitle")}</h2>
 
       {items.length === 0 ? (
-        <p className="mt-2 text-sm text-[color:var(--ok)]">{tc("outstandingNone")}</p>
+        <p className="mt-2 flex items-center gap-1.5 text-sm text-[color:var(--ink-muted)]">
+          <Check />
+          {tc("outstandingNone")}
+        </p>
       ) : (
         <ul className="mt-3 flex flex-wrap gap-2">
-          {items.map((item) => {
-            const body = (
-              <>
+          {items.map((item) => (
+            <li key={item.label}>
+              <Link
+                href={item.href}
+                className="chip font-semibold transition hover:border-[color:var(--ink-muted)]"
+              >
                 <span className="font-bold tabular-nums">{item.n}</span>
                 <span className="text-[color:var(--ink-muted)]">{item.label}</span>
-              </>
-            );
-            return (
-              <li key={item.label}>
-                {item.href ? (
-                  <Link
-                    href={item.href}
-                    className="chip font-semibold transition hover:border-[color:var(--ink-muted)]"
-                  >
-                    {body}
-                  </Link>
-                ) : (
-                  <span className="chip font-semibold">{body}</span>
-                )}
-              </li>
-            );
-          })}
+              </Link>
+            </li>
+          ))}
         </ul>
       )}
     </section>

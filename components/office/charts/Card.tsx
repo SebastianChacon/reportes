@@ -17,6 +17,17 @@ import { tc } from "@/lib/i18n";
 
 export type Tone = "ours" | "theirs";
 
+/**
+ * The two series, as fills rather than hues.
+ *
+ * `ours` is solid ink and `theirs` is a 45° hatch. Not two greys: the
+ * categorical check fails on the chroma floor for any pair of greys, because
+ * the chroma of a grey is zero, and two greys in a stacked bar read as "more"
+ * and "less" rather than as two different things.
+ *
+ * Every chart goes through here, so the encoding is defined once and no
+ * individual chart gets to have an opinion about it.
+ */
 const FILL: Record<Tone, string> = {
   ours: "var(--viz-ours)",
   theirs: "var(--viz-theirs)",
@@ -26,22 +37,40 @@ export function fill(tone: Tone): string {
   return FILL[tone];
 }
 
+/**
+ * The ink to print *on top of* a fill.
+ *
+ * Solid ink takes the inverse, as before. The hatch cannot: white text over a
+ * hatch sits half on ink and half on the gaps and is unreadable at any size, so
+ * a label inside a hatched mark keeps normal ink and carries its own plate —
+ * see `SplitBar`, the only place a label sits inside a mark.
+ */
+export function onFill(tone: Tone): string {
+  return tone === "ours" ? "var(--accent-contrast)" : "var(--ink)";
+}
+
 export type LegendItem = { tone: Tone; label: string };
 
 export function Legend({ items }: { items: LegendItem[] }) {
-  // One series needs no legend: there is only one colour, and the title said it.
+  // One series needs no legend: there is only one fill, and the title said it.
   if (items.length < 2) return null;
 
   return (
     <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
       {items.map((item) => (
         <li key={item.label} className="flex items-center gap-1.5 text-xs">
+          {/* The swatch carries the real fill, hatch and all. Two identical
+              black squares would be a legend that says nothing — which is the
+              failure mode this encoding has and a two-hue one does not. */}
+          {/* 12px, not 10: at 10 a 5px-pitch hatch fits two stripes and reads as
+              a smudge. The swatch has to be big enough to show the encoding it
+              is explaining. */}
           <span
             aria-hidden="true"
-            className="h-2.5 w-2.5 shrink-0 rounded-[3px]"
+            className="h-3 w-3 shrink-0 rounded-[3px]"
             style={{ background: fill(item.tone) }}
           />
-          {/* Text wears text tokens, never the series colour — a mark beside the
+          {/* Text wears text tokens, never the series fill — a mark beside the
               word carries the identity, so the word stays readable. */}
           <span className="text-[color:var(--ink-muted)]">{item.label}</span>
         </li>

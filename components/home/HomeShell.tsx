@@ -165,7 +165,7 @@ function SurfaceCard({
           <IconArrowRight />
         </span>
       ) : (
-        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--warn)]">
+        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--ink-muted)]">
           <IconDash />
           {note}
         </span>
@@ -209,8 +209,12 @@ function TodayPanel({ lang, today, access }: { lang: Lang; today: Today; access:
               {th("todayOpen", lang)}
               <IconArrowRight />
             </Link>
+            {/* Solid ink rather than a tinted chip: on a page of quiet outlines,
+                "somebody has not filed" is the one thing that should stop the
+                eye, and inverting it is the loudest a single tint of ink can
+                be. */}
             {today.notFiled > 0 && (
-              <span className="chip font-semibold text-[color:var(--warn)]">
+              <span className="chip border-transparent bg-[color:var(--accent)] font-semibold text-[color:var(--accent-contrast)]">
                 <IconDash />
                 {today.notFiled} {th("todayNotFiled", lang).toLowerCase()}
               </span>
@@ -265,9 +269,7 @@ function StatusPanel({ lang, status }: { lang: Lang; status: SystemStatus }) {
       </p>
 
       {status.fieldOnly && (
-        <p className="card bg-[color:var(--warn-soft)] p-4 text-sm leading-relaxed text-[color:var(--warn)]">
-          {th("fieldOnlyNote", lang)}
-        </p>
+        <p className="notice p-4 text-sm leading-relaxed">{th("fieldOnlyNote", lang)}</p>
       )}
 
       {/* `items-start`, so a capability with nothing to report does not grow a
@@ -302,7 +304,10 @@ function CapabilityCard({ lang, capability }: { lang: Lang; capability: Capabili
               who can set them, and the fix is two lines of deployment config.
               `translate="no"` because a browser that helpfully translates
               AUTH_SECRET hands someone a variable name that does not exist. */}
-          <code translate="no" className="font-mono text-[13px] text-[color:var(--warn)]">
+          <code
+            translate="no"
+            className="rounded bg-[color:var(--accent-soft)] px-1.5 py-0.5 font-mono text-[13px] font-semibold"
+          >
             {capability.missing.join(" · ")}
           </code>
         </p>
@@ -321,24 +326,31 @@ function CapabilityCard({ lang, capability }: { lang: Lang; capability: Capabili
 /**
  * The state, said in a word and drawn in a shape.
  *
- * Colour carries none of the meaning on its own — the label is the answer and
- * the icon differs per state, so the badge survives both a greyscale print and
- * a reader who cannot tell the green from the amber.
+ * Colour never carried the meaning here — the label was always the answer and
+ * the icon always differed per state, which is why this badge survived a
+ * greyscale print long before the screen became greyscale.
+ *
+ * What changed is the emphasis. Two of these three states are "nothing to do",
+ * and one is "somebody has to go and set a variable". With no hue to separate
+ * them, the difference is fill: the two settled states are quiet outlines, and
+ * the one that needs a person is solid ink, which is the loudest a single tint
+ * can be. It is the same rule the console's status chips follow — a reader
+ * crossing between the two screens learns it once.
  */
 function StateBadge({ lang, state }: { lang: Lang; state: Capability["state"] }) {
   const map = {
-    always: { icon: <IconDot />, label: th("stateAlways", lang), tone: "var(--ok)" },
-    ready: { icon: <IconCheck />, label: th("stateReady", lang), tone: "var(--ok)" },
-    off: { icon: <IconDash />, label: th("stateOff", lang), tone: "var(--warn)" },
+    always: { icon: <IconDot />, label: th("stateAlways", lang), needsSomebody: false },
+    ready: { icon: <IconCheck />, label: th("stateReady", lang), needsSomebody: false },
+    off: { icon: <IconDash />, label: th("stateOff", lang), needsSomebody: true },
   }[state];
 
   return (
     <span
-      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold"
-      style={{
-        color: map.tone,
-        background: `color-mix(in srgb, ${map.tone} 12%, transparent)`,
-      }}
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${
+        map.needsSomebody
+          ? "border-transparent bg-[color:var(--accent)] text-[color:var(--accent-contrast)]"
+          : "border-[color:var(--line)] text-[color:var(--ink-muted)]"
+      }`}
     >
       {map.icon}
       {map.label}

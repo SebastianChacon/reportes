@@ -57,7 +57,8 @@ export function ReviewActions({ reportId, status }: { reportId: string; status: 
   const trimmed = note.trim();
 
   return (
-    <div className="flex flex-col gap-3">
+    // `no-print`: approving is an action, and a printed report is a record.
+    <div className="no-print flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
         {status !== "approved" && (
           <button
@@ -143,7 +144,7 @@ export function ReviewActions({ reportId, status }: { reportId: string; status: 
       {failed && (
         <p
           role="alert"
-          className="rounded-lg border border-[color:var(--warn)]/40 bg-[color:var(--warn-soft)] px-3 py-2 text-sm font-medium text-[color:var(--warn)]"
+          className="notice text-sm"
         >
           {tc("actionFailed")}
         </p>

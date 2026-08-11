@@ -235,4 +235,40 @@ describe("matchesFilter", () => {
   it("requires every filter given to hold, not any of them", () => {
     expect(matchesFilter(report, { clientName: "salazar", jobNumber: "99999" })).toBe(false);
   });
+
+  /**
+   * The filter that turns the summary's "Outstanding" counts into links. It has
+   * to agree with `outstanding()` above it in this file — a count that says
+   * twelve and a search that returns nine is worse than no link at all.
+   */
+  describe("issue", () => {
+    const flagged = { ...report, flags: [{ key: "warnNoHours" }, { key: "warnLongDay" }] };
+
+    it("keeps a report carrying the flag asked for", () => {
+      expect(matchesFilter(flagged, { issue: "noHours" })).toBe(true);
+      expect(matchesFilter(flagged, { issue: "longDay" })).toBe(true);
+    });
+
+    it("drops a report that does not carry it", () => {
+      expect(matchesFilter(flagged, { issue: "noCrew" })).toBe(false);
+      expect(matchesFilter(report, { issue: "noHours" })).toBe(false);
+    });
+
+    it("treats a report with no flags at all as carrying none", () => {
+      expect(matchesFilter({ ...report, flags: [] }, { issue: "noHours" })).toBe(false);
+    });
+
+    it("reads 'no foreman' as an absent field rather than a flag", () => {
+      const orphan = { ...report, submittedBy: undefined, flags: [] };
+      expect(matchesFilter(orphan, { issue: "unattributed" })).toBe(true);
+      // A report that has a foreman is not unattributed, whatever else is
+      // wrong with it.
+      expect(matchesFilter(flagged, { issue: "unattributed" })).toBe(false);
+    });
+
+    it("still applies alongside the other filters", () => {
+      expect(matchesFilter(flagged, { issue: "noHours", clientName: "salazar" })).toBe(true);
+      expect(matchesFilter(flagged, { issue: "noHours", clientName: "weiss" })).toBe(false);
+    });
+  });
 });
