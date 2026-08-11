@@ -6,6 +6,7 @@ import { CREW, CREW_GROUPS } from "@/lib/catalog";
 import { CONSOLE_LANG, tc } from "@/lib/i18n";
 import { filtersFromForm, toQuery, type SearchFilters as Filters } from "@/lib/officeSearch";
 import type { CrewGroup } from "@/lib/types";
+import { FOCUS_SEARCH } from "./Shortcuts";
 
 /**
  * The filters, as a form that writes itself into the address bar.
@@ -51,7 +52,26 @@ export function SearchFilters({
     job: React.useId(),
     filedBy: React.useId(),
     person: React.useId(),
+    issue: React.useId(),
   };
+
+  /**
+   * Arrived here by pressing `/` somewhere else in the console. `Shortcuts` left
+   * the note; this consumes it, so a reload or a shared link does not re-fire.
+   */
+  React.useEffect(() => {
+    let asked = false;
+    try {
+      asked = window.sessionStorage.getItem(FOCUS_SEARCH) === "1";
+      if (asked) window.sessionStorage.removeItem(FOCUS_SEARCH);
+    } catch {
+      // Storage unavailable; nothing to consume.
+    }
+    if (asked) {
+      clientRef.current?.focus();
+      clientRef.current?.select();
+    }
+  }, []);
 
   /**
    * `/` jumps to the client box — the filter a search almost always starts
@@ -88,14 +108,24 @@ export function SearchFilters({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  /**
+   * The search runs on the server, so the wait is real and used to be invisible:
+   * press the button and nothing happens until the results replace themselves.
+   * `useTransition` is what makes that wait observable — it stays true for as
+   * long as the navigation it wraps is still resolving.
+   */
+  const [searching, startSearching] = React.useTransition();
+
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const next = filtersFromForm(new FormData(event.currentTarget));
-    router.push(`/office/reportes?${toQuery(next)}`);
+    startSearching(() => {
+      router.push(`/office/reportes?${toQuery(next)}`);
+    });
   }
 
   return (
-    <form onSubmit={submit} className="card flex flex-col gap-4 p-4 sm:p-5">
+    <form onSubmit={submit} className="no-print card flex flex-col gap-4 p-4 sm:p-5">
       <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-1">
           <Field id={ids.from} label={tc("filterFrom")}>
@@ -155,6 +185,22 @@ export function SearchFilters({
           </select>
         </Field>
 
+        {/* The filter the summary's "Outstanding" counts link into. It is here
+            as a real control rather than only in the URL, because a hidden
+            filter is one the next search silently drops — this form rebuilds
+            the query from its own fields, so anything it cannot show, it
+            cannot keep. Being visible also makes it findable, which the counts
+            on the summary alone would not. */}
+        <Field id={ids.issue} label={tc("filterIssue")}>
+          <select id={ids.issue} name="issue" className="field" defaultValue={filters.issue ?? ""}>
+            <option value="">{tc("filterAnyIssue")}</option>
+            <option value="noHours">{tc("flagNoHours")}</option>
+            <option value="longDay">{tc("flagLongDay")}</option>
+            <option value="noCrew">{tc("flagNoCrew")}</option>
+            <option value="unattributed">{tc("unattributed")}</option>
+          </select>
+        </Field>
+
         {/* The roster, not the accounts: this asks who was *on* the crew, and
             most of the people on a crew have never signed into anything. */}
         <Field id={ids.person} label={tc("filterPerson")}>
@@ -179,11 +225,16 @@ export function SearchFilters({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
+        {/* Disabled while it runs, so a second press cannot queue a second
+            navigation behind the first — and `aria-busy` so the wait is
+            announced rather than only drawn. */}
         <button
           type="submit"
-          className="min-h-11 rounded-xl bg-[color:var(--accent)] px-5 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition active:scale-[0.99]"
+          disabled={searching}
+          aria-busy={searching}
+          className="min-h-11 rounded-xl bg-[color:var(--accent)] px-5 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition active:scale-[0.99] disabled:opacity-60"
         >
-          {tc("runSearch")}
+          {searching ? tc("searching") : tc("runSearch")}
         </button>
 
         {/* A link rather than a reset button: clearing is a different search,

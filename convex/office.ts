@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { query, type QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
-import { crewDayFields, reportFields, reportStatus } from "./validators";
+import { crewDayFields, reportFields, reportStatus, searchIssue } from "./validators";
 import {
   matchesFilter,
   missingForemen,
@@ -398,6 +398,13 @@ export const search = query({
     submittedBy: v.optional(v.id("users")),
     /** A roster id: every report this person was on the crew of. */
     personId: v.optional(v.string()),
+    /**
+     * One thing wrong with the report. Not indexed and deliberately so: it is
+     * checked on the rows `by_date` / `by_status_date` already narrowed to, the
+     * same as client name and job number. An index per flag would be four
+     * indexes serving a question asked from one screen.
+     */
+    issue: v.optional(searchIssue),
   },
   returns: v.object({
     reports: v.array(reportCard),
@@ -408,6 +415,7 @@ export const search = query({
       clientName: args.clientName,
       jobNumber: args.jobNumber,
       submittedBy: args.submittedBy,
+      issue: args.issue,
     };
 
     let scanned: Doc<"reports">[];

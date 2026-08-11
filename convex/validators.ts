@@ -72,6 +72,20 @@ export const reportStatus = v.union(
   v.literal("approved")
 );
 
+/**
+ * The four things the summary counts as outstanding, as a search filter.
+ *
+ * Kept in step with `SEARCH_ISSUES` in `lib/summaries.ts`, which is where the
+ * matching actually happens — this is only the shape the query will accept, so
+ * a hand-edited URL cannot reach the handler with a value it has no branch for.
+ */
+export const searchIssue = v.union(
+  v.literal("noHours"),
+  v.literal("longDay"),
+  v.literal("noCrew"),
+  v.literal("unattributed")
+);
+
 /** Exactly what the phone sends. Anything the office decides later is not in here. */
 export const submittedReportFields = {
   /**

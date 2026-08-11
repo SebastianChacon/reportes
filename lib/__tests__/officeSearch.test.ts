@@ -21,6 +21,7 @@ const EMPTY: SearchFilters = {
   jobNumber: "",
   submittedBy: null,
   personId: null,
+  issue: null,
 };
 
 describe("searchRange", () => {
@@ -90,6 +91,7 @@ describe("parseFilters", () => {
           job: "21550",
           filedBy: "user_abc",
           person: "aguilar-miguel",
+          issue: "noHours",
         },
         NOW
       )
@@ -101,6 +103,7 @@ describe("parseFilters", () => {
       jobNumber: "21550",
       submittedBy: "user_abc",
       personId: "aguilar-miguel",
+      issue: "noHours",
     });
   });
 
@@ -111,6 +114,14 @@ describe("parseFilters", () => {
    */
   it("drops a status it does not recognise", () => {
     expect(parseFilters({ status: "pending" }, NOW).status).toBeNull();
+  });
+
+  it("drops an issue it does not recognise", () => {
+    // Convex rejects an argument outside the union, so a hand-edited URL that
+    // reached the query with `issue=whatever` would turn a stale bookmark into
+    // an error page rather than a wider search.
+    expect(parseFilters({ issue: "whatever" }, NOW).issue).toBeNull();
+    expect(parseFilters({ issue: "noHours" }, NOW).issue).toBe("noHours");
   });
 
   it("treats a box nobody typed in as no filter at all", () => {
@@ -149,6 +160,7 @@ describe("toQuery", () => {
       jobNumber: "21550",
       submittedBy: "user_abc",
       personId: "aguilar-miguel",
+      issue: "noHours",
     };
 
     const params = Object.fromEntries(new URLSearchParams(toQuery(filters)));
@@ -180,6 +192,7 @@ describe("filtersFromForm", () => {
       jobNumber: "",
       submittedBy: null,
       personId: "aguilar-miguel",
+      issue: null,
     });
   });
 

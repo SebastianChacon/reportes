@@ -69,9 +69,7 @@ export default async function SearchPage({
         {/* Said out loud rather than trimmed in silence — a search that quietly
             dropped the older half would be answering a different question. */}
         {results.truncated && (
-          <p className="rounded-lg border border-[color:var(--warn)]/40 bg-[color:var(--warn-soft)] px-3 py-2 text-sm font-medium text-[color:var(--warn)]">
-            {tc("resultsTruncated")}
-          </p>
+          <p className="notice text-sm">{tc("resultsTruncated")}</p>
         )}
 
         {results.reports.length === 0 ? (

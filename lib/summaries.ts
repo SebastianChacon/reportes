@@ -191,12 +191,41 @@ export type ReportFilter = {
   /** Exact, against any job number on the report. A job number is an identifier. */
   jobNumber?: string;
   submittedBy?: string;
+  /** One thing wrong with the report — see `ISSUE_FLAG`. */
+  issue?: SearchIssue;
+};
+
+/**
+ * The four things the summary counts as outstanding, as one filter.
+ *
+ * They are one filter rather than four because they answer one question — "what
+ * is wrong with it" — and a project manager picks exactly one at a time. Three
+ * of them are soft checks the phone ran and stored on the report; the fourth is
+ * the absence of a foreman, which is not a flag but reads as the same kind of
+ * problem to the person looking for it.
+ *
+ * This exists so the counts on the summary can be links. A number a PM cannot
+ * click is a number they have to go and reconstruct by hand, and the console
+ * knew there were twelve reports missing hours while offering no way to see
+ * them.
+ */
+export const SEARCH_ISSUES = ["noHours", "longDay", "noCrew", "unattributed"] as const;
+export type SearchIssue = (typeof SEARCH_ISSUES)[number];
+
+/** Which stored flag key each issue is asking about. `unattributed` is not one. */
+const ISSUE_FLAG: Record<SearchIssue, string | null> = {
+  noHours: "warnNoHours",
+  longDay: "warnLongDay",
+  noCrew: "warnNoCrew",
+  unattributed: null,
 };
 
 export type FilterableReport = {
   clientName: string;
   jobNumbers: string[];
   submittedBy?: string;
+  /** As stored at write time — the warnings the foreman's phone actually sent. */
+  flags?: { key: string }[];
 };
 
 export function matchesFilter(report: FilterableReport, filter: ReportFilter): boolean {
@@ -209,6 +238,17 @@ export function matchesFilter(report: FilterableReport, filter: ReportFilter): b
   }
 
   if (filter.submittedBy && report.submittedBy !== filter.submittedBy) return false;
+
+  if (filter.issue) {
+    const wanted = ISSUE_FLAG[filter.issue];
+
+    if (wanted === null) {
+      // "No foreman" is the absence of a field, not the presence of a flag.
+      if (report.submittedBy) return false;
+    } else if (!(report.flags ?? []).some((flag) => flag.key === wanted)) {
+      return false;
+    }
+  }
 
   return true;
 }

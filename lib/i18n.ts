@@ -531,6 +531,23 @@ export const CONSOLE = {
   // Getting between the screens
   navDay: { en: "The day", es: "El día" },
   navSearch: { en: "Search", es: "Buscar" },
+  skipToContent: { en: "Skip to content", es: "Saltar al contenido" },
+  loading: { en: "Loading", es: "Cargando" },
+  searching: { en: "Searching…", es: "Buscando…" },
+  approvedJustNow: { en: "Approved", es: "Aprobado" },
+  undo: { en: "Undo", es: "Deshacer" },
+  undoing: { en: "Undoing…", es: "Deshaciendo…" },
+  showAll: { en: "All", es: "Todos" },
+  noneUnderFilter: { en: "Nothing left here", es: "No queda nada aquí" },
+  noneUnderFilterHint: {
+    en: "Reports were filed today — none of them are in this state.",
+    es: "Hoy sí llegaron reportes; ninguno está en este estado.",
+  },
+  breadcrumb: { en: "Breadcrumb", es: "Ruta de navegación" },
+  crumbReport: { en: "Report", es: "Reporte" },
+  crumbPerson: { en: "The week", es: "La semana" },
+  crumbAdvanced: { en: "Advanced", es: "Avanzado" },
+  crumbClient: { en: "Client", es: "Cliente" },
 
   // Search
   searchTitle: { en: "Search reports", es: "Buscar reportes" },
@@ -538,6 +555,8 @@ export const CONSOLE = {
     en: "Every filter stays in the address bar, so a search is a link you can send.",
     es: "Cada filtro queda en la barra de direcciones, así que una búsqueda es un link que puedes mandar.",
   },
+  filterIssue: { en: "Problem", es: "Problema" },
+  filterAnyIssue: { en: "Any", es: "Cualquiera" },
   filterFrom: { en: "From", es: "Desde" },
   filterTo: { en: "To", es: "Hasta" },
   filterStatus: { en: "Status", es: "Estado" },
@@ -795,7 +814,6 @@ export const CONSOLE = {
     es: "El mismo periodo, con el eje suelto: agrúpalo por lo que estés preguntando, ordénalo, y llévatelo como hoja de cálculo.",
   },
   advancedOpen: { en: "Advanced options", es: "Opciones avanzadas" },
-  backToSummary: { en: "Back to the summary", es: "Volver al resumen" },
 
   groupBy: { en: "Group by", es: "Agrupar por" },
   groupWeek: { en: "Week", es: "Semana" },

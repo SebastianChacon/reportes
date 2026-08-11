@@ -3,6 +3,7 @@ import Link from "next/link";
 import { officeAccess } from "@/lib/officeSession";
 import { tc } from "@/lib/i18n";
 import { ConsoleNav } from "@/components/office/ConsoleNav";
+import { Shortcuts } from "@/components/office/Shortcuts";
 import { SignOutButton } from "@/components/office/SignOutButton";
 import { Unconfigured } from "@/components/office/Unconfigured";
 
@@ -23,6 +24,19 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col">
+      {/* The console is driven from a keyboard far more than the phone is —
+          globals.css says as much where it draws the focus rings — and until now
+          reaching the content still meant tabbing the whole header on every
+          screen. Hidden until focused, then it lands over the header. */}
+      <a
+        href="#main"
+        className="sr-only rounded-lg bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-[color:var(--accent-contrast)] focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-30"
+      >
+        {tc("skipToContent")}
+      </a>
+
+      <Shortcuts />
+
       <header className="sticky top-0 z-20 border-b border-[color:var(--line)] bg-[color:var(--surface-sunk)]/90 backdrop-blur">
         {/* Four things on one line at 375px is one too many, so the pieces that
             repeat themselves give way first: the "Office" eyebrow, and the
@@ -55,7 +69,12 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-5 sm:px-6 sm:py-7">{children}</main>
+      {/* `tabIndex={-1}` so the skip link can actually move focus here — an
+          anchor to a non-focusable element scrolls the page but leaves the
+          keyboard where it was, which is the usual way skip links quietly fail. */}
+      <main id="main" tabIndex={-1} className="flex-1 px-4 py-5 outline-none sm:px-6 sm:py-7">
+        {children}
+      </main>
     </div>
   );
 }

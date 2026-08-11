@@ -92,7 +92,7 @@ export function StackedColumns({ columns }: { columns: Column[] }) {
 
                     {column.cap && total > 0 && (
                       <span
-                        className="pointer-events-none absolute inset-x-0 text-center text-[11px] font-semibold tabular-nums text-[color:var(--ink-muted)]"
+                        className="pointer-events-none absolute inset-x-0 text-center text-[11px] font-semibold tabular-nums figure text-[color:var(--ink-muted)]"
                         style={{ bottom: `calc(${(total / ceiling) * 100}% + 4px)` }}
                       >
                         {column.cap}
@@ -109,7 +109,7 @@ export function StackedColumns({ columns }: { columns: Column[] }) {
           {columns.map((column) => (
             <li
               key={column.key}
-              className="min-w-0 flex-1 text-center text-[11px] tabular-nums text-[color:var(--ink-muted)]"
+              className="min-w-0 flex-1 text-center text-[11px] tabular-nums figure text-[color:var(--ink-muted)]"
             >
               {column.label}
             </li>
@@ -152,7 +152,7 @@ function YAxis({ ceiling }: { ceiling: number }) {
   return (
     <ul
       aria-hidden="true"
-      className="flex w-10 shrink-0 flex-col justify-between text-right text-[11px] tabular-nums text-[color:var(--ink-muted)]"
+      className="flex w-10 shrink-0 flex-col justify-between text-right text-[11px] tabular-nums figure text-[color:var(--ink-muted)]"
       style={{ height: PLOT_HEIGHT }}
     >
       {ticks.map((at) => (

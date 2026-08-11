@@ -100,7 +100,7 @@ export function SignInForm() {
           <p
             id={errorId}
             role="alert"
-            className="mt-4 rounded-lg border border-[color:var(--warn)]/40 bg-[color:var(--warn-soft)] px-3 py-2 text-sm font-medium text-[color:var(--warn)]"
+            className="notice mt-4 text-sm"
           >
             {messageFor(error)}
           </p>

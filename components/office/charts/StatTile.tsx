@@ -57,10 +57,16 @@ export function StatTile({
 /**
  * The change against the period before.
  *
- * Colour never carries this alone — the arrow and the sign say the same thing,
- * so the meaning survives a printout and a reader who cannot separate the green
- * from the brown. `neutral` gets no colour at all, because for most of these
- * numbers "up" is neither good nor bad, it is just bigger.
+ * The arrow and the sign already said the direction, so losing the green and the
+ * brown costs no information. What the colour *was* carrying on its own is
+ * whether that direction is good news, and that moves to weight: a change in the
+ * wrong direction sits in full ink and semibold, everything else recedes to
+ * muted at a normal weight.
+ *
+ * Weight rather than a second glyph on purpose. These tiles sit five across on a
+ * desktop, and a row of five arrows each with a badge beside it is a row nobody
+ * reads. One of the five looking heavier than the others is legible at a glance,
+ * which is the only way this line gets used at all.
  */
 function Delta({ value, direction }: { value: number | null; direction: Direction }) {
   if (value === null) {
@@ -79,15 +85,16 @@ function Delta({ value, direction }: { value: number | null; direction: Directio
   const up = points > 0;
   const good = flat ? null : direction === "up-good" ? up : direction === "up-bad" ? !up : null;
 
+  // Only the wrong direction gets the weight. "Good" reads the same as neutral,
+  // which is right: a dashboard that congratulates itself in bold on four tiles
+  // out of five has spent its emphasis on the tiles nobody needs to act on.
   const tone =
-    good === null
-      ? "text-[color:var(--ink-muted)]"
-      : good
-        ? "text-[color:var(--ok)]"
-        : "text-[color:var(--warn)]";
+    good === false
+      ? "font-semibold text-[color:var(--ink)]"
+      : "font-normal text-[color:var(--ink-muted)]";
 
   return (
-    <p className={`mt-2 flex items-center gap-1 text-xs font-semibold ${tone}`}>
+    <p className={`mt-2 flex items-center gap-1 text-xs ${tone}`}>
       {!flat && (
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path

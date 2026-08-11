@@ -37,98 +37,192 @@
  */
 [data-surface="office"],
 [data-surface="home"] {
+  /*
+   * One ink.
+   *
+   * Not #000 on #fff. Pure black on pure white is 21:1, and at the sizes on this
+   * screen — read for an hour at a stretch — it vibrates: the text crawls for
+   * anyone with astigmatism. #141414 gives 18.4:1, which is contrast to spare.
+   */
   --surface: #ffffff;
-  --surface-sunk: #f6f6f5;
+  --surface-sunk: #f4f4f2;
   --surface-raised: #ffffff;
-  --ink: #16150f;
-  --ink-muted: #5f5d55;
-  --line: #e0dfd9;
-  --accent: #16150f;
-  --accent-soft: #f0efea;
+  --ink: #141414;
+  --ink-muted: #5c5c5c;
+  --line: #dcdcda;
+  --accent: #141414;
+  --accent-soft: #f0f0ee;
   --accent-contrast: #ffffff;
 
-  /* Status, which the phone has no vocabulary for. */
-  --ok: #2f6b3f;
-  --ok-soft: #e8f2ea;
-  --warn: #8a4b12;
-  --warn-soft: #fbeee1;
+  /*
+   * Status, which the phone has no vocabulary for — and which, without hue, has
+   * to be carried by something else.
+   *
+   * There is no green and no brown here. A block that needs a person gets three
+   * signals at once and none of them is colour: the 2px rule down its left edge,
+   * a bold title, and an icon. It is louder than the old warm brown was, which
+   * is the point — `needs_review` in pale brown disappeared in a list of thirty.
+   */
+  --attention: var(--ink);
+  --attention-soft: #f0f0ee;
+  --rule: 2px;
 
   /*
-   * Chart colour.
+   * Chart fill.
    *
    * Two categorical slots and no more, because no chart in the summary carries
    * more than two series — which is not a limitation, it is the finding: every
    * question worth asking here is "ours against theirs".
    *
-   * The pair is validated against this project's own chart surface (#ffffff
-   * light, #1d1c16 dark) rather than against a reference surface: adjacent CVD
-   * ΔE 9.2 / 9.4, normal-vision ΔE 24.0 / 20.9, both clear of the floors.
+   * **Identity is the fill, not the tone.** Two greys cannot do this job, and
+   * that is arithmetic rather than taste: the categorical check fails on the
+   * chroma floor for any pair of greys, because the chroma of a grey is zero.
+   * Two greys in a stacked bar read as "more" and "less", not as "ours" and
+   * "theirs". So one series is solid and the other is hatched.
    *
-   * One semantic rule holds across every chart on the screen, and it is what
-   * makes four charts read as one page:
+   * It also happens to be the better answer for this product specifically:
+   * a hatch survives the photocopier, and these reports get printed and stapled
+   * to invoices.
    *
-   *   --viz-ours    the company's own, and the productive half
+   *   --viz-ours    solid — the company's own, and the productive half
    *                 (on-site hours · owned machines · material from the yard)
-   *   --viz-theirs  what leaves the company
+   *   --viz-theirs  hatched — what leaves the company
    *                 (driving · rentals · anything bought for the job)
    *
    * After the first chart nobody has to read the legend again.
    */
-  --viz-ours: #2a78d6;
-  --viz-theirs: #eb6834;
-  --viz-grid: #e6e5df;
-  --viz-track: #efeee9;
+  --viz-ours: var(--ink);
+  --viz-theirs: repeating-linear-gradient(
+      45deg,
+      var(--ink) 0 1.5px,
+      transparent 1.5px 5px
+    ),
+    var(--surface-raised);
+  --viz-grid: #e4e4e1;
+  --viz-track: #eeeeec;
 
   /*
-   * One hue, light to dark: the heat map's cells are magnitude, not identity.
-   * "No report at all" is deliberately NOT a step on this ramp — it is drawn
-   * hollow, because an absence is not a small amount.
+   * One ramp, light to dark: the heat map's cells are magnitude, not identity,
+   * and magnitude is the one job grey is actually right for.
+   *
+   * Four steps, not five. Measured: at five steps the worst adjacent pair sits
+   * at ΔE 11.1, under the 15 floor — two neighbouring steps nobody can tell
+   * apart. At four it is 16.9 and clears it.
+   *
+   * The two lightest steps fall under 3:1 against the surface, which obliges a
+   * second channel. It is already there: every chart carries its table. That is
+   * what makes this ramp legal — do not remove those tables.
+   *
+   * "No report at all" is deliberately NOT a step here — it is drawn hollow,
+   * because an absence is not a small amount.
    */
-  --viz-seq-1: #9ec5f4;
-  --viz-seq-2: #6da7ec;
-  --viz-seq-3: #3987e5;
-  --viz-seq-4: #256abf;
-  --viz-seq-5: #104281;
+  --viz-seq-1: #cfcfcb;
+  --viz-seq-2: #9a9a94;
+  --viz-seq-3: #63635d;
+  --viz-seq-4: #1b1b18;
+
+  /*
+   * The ring on a day nobody filed.
+   *
+   * Its own token rather than `--line`, because it has to beat the *faintest
+   * step of the ramp* — not merely divide two panels — and it has to do that in
+   * both themes. A hollow cell that reads as "a very small amount" instead of
+   * "nothing at all" would bury the one thing the calendar exists to show.
+   * 1.55:1 against the card here, against the ramp floor's 1.42.
+   */
+  --viz-hollow: #d0d0cc;
 
   color-scheme: light;
   background: var(--surface-sunk);
   color: var(--ink);
+
+  /*
+   * Typography, scoped here for the same reason the tokens are: the phone keeps
+   * the system stack and downloads nothing. The variables are defined by
+   * `app/fonts.ts`, applied by the office and inicio layouts.
+   *
+   * The fallback is not decoration — until the face swaps in, and forever if it
+   * fails to load, this is what the console is set in.
+   */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+}
+
+/*
+ * Figures in the mono — but only where a figure is an *instrument*.
+ *
+ * The tempting rule is "everything with `tabular-nums`", and it is wrong: that
+ * class sits on whole sentences that merely contain a number ("3 of 7 filed",
+ * "12 reports"), and those would turn monospace for no reason other than having
+ * a digit in them. A number set in mono inside a sans sentence is a nice
+ * editorial touch; a sentence set in mono because it counts something is not.
+ *
+ * So the mono goes to two places, which are the places a fixed width does real
+ * work: numeric cells in a column, and the labels on a chart. `.figure` marks
+ * the second, since a chart label is not in a table and nothing else can tell.
+ *
+ * `font-variant-numeric` is restated so a fallback face still lines up if the
+ * font never arrives.
+ */
+[data-surface="office"] :is(td, th).tabular-nums,
+[data-surface="home"] :is(td, th).tabular-nums,
+[data-surface="office"] .figure,
+[data-surface="home"] .figure,
+[data-surface="office"] code,
+[data-surface="home"] code {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  /* Plex Mono runs a touch wide against Archivo at the same nominal size. */
+  font-size: 0.95em;
+  letter-spacing: -0.01em;
 }
 
 @media (prefers-color-scheme: dark) {
   [data-surface="office"],
   [data-surface="home"] {
-    --surface: #16150f;
-    --surface-sunk: #100f0b;
-    --surface-raised: #1d1c16;
-    --ink: #f2f1ea;
-    --ink-muted: #a3a096;
-    --line: #33312a;
-    --accent: #f2f1ea;
-    --accent-soft: #26251e;
-    --accent-contrast: #16150f;
+    --surface: #141414;
+    --surface-sunk: #0d0d0d;
+    --surface-raised: #1c1c1b;
+    --ink: #f2f2f0;
+    --ink-muted: #a0a09c;
+    --line: #303030;
+    --accent: #f2f2f0;
+    --accent-soft: #262624;
+    --accent-contrast: #141414;
 
-    /* Lifted well clear of the dark surface: the light-mode greens and browns
-     * fall under 4.5:1 against #1d1c16 and stop being readable as text. */
-    --ok: #7fc490;
-    --ok-soft: #1b2a1f;
-    --warn: #e0a35f;
-    --warn-soft: #2c2117;
+    /* Same three signals, same lack of hue. `--attention-soft` is a step up off
+     * the raised surface rather than down, because on a dark screen the thing
+     * that draws the eye is the lighter patch. */
+    --attention: var(--ink);
+    --attention-soft: #262624;
 
-    /* The same two hues, stepped for the dark surface and re-validated against
-     * it — not the light values flipped, which would drop both below 3:1. */
-    --viz-ours: #3987e5;
-    --viz-theirs: #d95926;
-    --viz-grid: #2e2c25;
-    --viz-track: #26251e;
+    /* The hatch inverts with the ink: light lines on the dark card. The gaps
+     * fall back to `--surface-raised` so a hatched mark sitting on a card reads
+     * against the card and not against the page behind it. */
+    --viz-ours: var(--ink);
+    --viz-theirs: repeating-linear-gradient(
+        45deg,
+        var(--ink) 0 1.5px,
+        transparent 1.5px 5px
+      ),
+      var(--surface-raised);
+    --viz-grid: #2c2c2a;
+    --viz-track: #262624;
 
-    /* The ramp runs the other way here: on a dark surface the deep blue is the
-     * one that recedes, so "more" is lighter. */
-    --viz-seq-1: #184f95;
-    --viz-seq-2: #256abf;
-    --viz-seq-3: #3987e5;
-    --viz-seq-4: #6da7ec;
-    --viz-seq-5: #9ec5f4;
+    /* The ramp runs the other way here: on a dark surface the near-black is the
+     * one that recedes, so "more" is lighter. Re-measured against this surface
+     * rather than flipped by hand — worst adjacent pair ΔE 16.8, clears 15. */
+    --viz-seq-1: #3a3a37;
+    --viz-seq-2: #6b6b65;
+    --viz-seq-3: #9d9d96;
+    --viz-seq-4: #e8e8e4;
+
+    /* Where this matters most. On a dark card the faintest step (#3a3a37, 1.49:1)
+     * and the card itself are close enough that a hollow cell ringed in `--line`
+     * (1.29:1) would have read as the bottom of the ramp. At 1.92:1 the ring is
+     * brighter than the whole faintest cell, so "outlined and empty" and "filled
+     * a little" stay two visibly different things. */
+    --viz-hollow: #4a4a47;
 
     color-scheme: dark;
   }
@@ -143,17 +237,22 @@
  * either: every number in a tooltip is also in the table under the chart.
  */
 .viz-mark {
+  /*
+   * Only `position`. It used to also set `display: block`, which every mark
+   * already had by being a div — but because this rule is declared after the
+   * Tailwind import, it silently beat `.flex` on the one mark that asked for it,
+   * and SplitBar's in-bar percentages had been left-aligned rather than centred
+   * ever since. A utility class that quietly overrides utility classes is worth
+   * not having.
+   */
   position: relative;
-  display: block;
 }
 
 .viz-tip {
   position: absolute;
   bottom: calc(100% + 6px);
   left: 50%;
-  transform: translateX(-50%);
   z-index: 30;
-  display: none;
   width: max-content;
   max-width: 15rem;
   border-radius: 8px;
@@ -165,23 +264,56 @@
   color: var(--ink);
   box-shadow: 0 6px 20px rgb(0 0 0 / 0.16);
   pointer-events: none;
+
+  /*
+   * `visibility` + `opacity` rather than `display: none`, which cannot be
+   * transitioned at all. It also stays out of the accessibility tree and out of
+   * hit-testing while hidden, which `opacity: 0` alone would not manage.
+   *
+   * It grows from the mark that owns it — the bottom edge, since every tooltip
+   * on this screen sits above its mark — so it reads as belonging to the thing
+   * under the cursor rather than appearing over it.
+   */
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(-50%) scale(0.96);
+  transform-origin: bottom center;
+  transition: opacity 125ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 125ms cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 125ms;
 }
 
 .viz-mark:hover > .viz-tip,
 .viz-mark:focus-visible > .viz-tip {
-  display: block;
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+  /* No delay on the way in — the wait belongs to the exit, so moving along a row
+   * of marks does not flicker the tooltip off and on between them. */
+  transition-delay: 0s;
 }
 
 /* A row of marks near the left or right edge would otherwise push its tooltip
- * off the card. These two pin it inside instead of centring it. */
+ * off the card. These two pin it inside instead of centring it, and re-state the
+ * scale so the transform above does not drop it. */
 .viz-tip-start {
   left: 0;
-  transform: none;
+  transform: scale(0.96);
+  transform-origin: bottom left;
 }
+.viz-mark:hover > .viz-tip-start,
+.viz-mark:focus-visible > .viz-tip-start {
+  transform: scale(1);
+}
+
 .viz-tip-end {
   left: auto;
   right: 0;
-  transform: none;
+  transform: scale(0.96);
+  transform-origin: bottom right;
+}
+.viz-mark:hover > .viz-tip-end,
+.viz-mark:focus-visible > .viz-tip-end {
+  transform: scale(1);
 }
 
 /*
@@ -332,6 +464,33 @@ input[type="number"]::-webkit-inner-spin-button {
   border-radius: 16px;
 }
 
+/*
+ * A card that is asking for something.
+ *
+ * With no hue left to spend, "this one needs a person" is carried by the left
+ * edge: the hairline thickens to a full rule in ink. Only the left edge, so a
+ * column of cards still reads as a column — a full ink border on all four sides
+ * would make every attention card look like a modal.
+ */
+.card-attention {
+  /* An inset shadow rather than a thicker border, so the rule costs no layout:
+   * a card that grew 1px when it started asking for something would nudge every
+   * card beside it, and this class lands on tiles sitting in a grid row. */
+  box-shadow: inset var(--rule) 0 0 0 var(--attention);
+}
+
+/*
+ * The one-line notice a screen says out loud — a truncated chart, a search that
+ * dropped its older half, an action that failed. Same rule, same reason.
+ */
+.notice {
+  border-left: var(--rule) solid var(--attention);
+  background: var(--attention-soft);
+  border-radius: 0 8px 8px 0;
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;
@@ -373,4 +532,96 @@ input[type="number"]::-webkit-inner-spin-button {
 /* The signature pad must not scroll the page while you're drawing on it. */
 .signature-pad {
   touch-action: none;
+}
+
+/*
+ * Windows High Contrast, and any other forced-colours mode.
+ *
+ * The one place this design has a genuine weakness: `--viz-theirs` is a
+ * gradient, and forced-colours mode overrides `background-color` but leaves
+ * background *images* alone — so the hatch would survive while the solid series
+ * beside it was repainted to the system's canvas colour, and the two would stop
+ * being distinguishable in the one mode that exists to make things clearer.
+ *
+ * So the hatch is redrawn in `currentColor` here, which forced-colours does map,
+ * and the solid series takes a border for the same reason.
+ */
+@media (forced-colors: active) {
+  [data-surface="office"],
+  [data-surface="home"] {
+    --viz-theirs: repeating-linear-gradient(
+        45deg,
+        currentColor 0 1.5px,
+        transparent 1.5px 5px
+      ),
+      Canvas;
+    --viz-ours: CanvasText;
+  }
+
+  /* The rule down an attention card is a shadow, and shadows are dropped. */
+  .card-attention,
+  .notice {
+    border-left: var(--rule) solid CanvasText;
+  }
+}
+
+/*
+ * Printing.
+ *
+ * These reports get printed and stapled to invoices, which is half the reason
+ * the console is monochrome in the first place — so this costs almost nothing
+ * and there is no excuse for not having it.
+ *
+ * What goes: the sticky header (it would repeat on every sheet, or worse, cover
+ * the first line of each), the navigation, and anything that is an action rather
+ * than a record. What stays: the report.
+ */
+@media print {
+  [data-surface="office"],
+  [data-surface="home"] {
+    --surface: #ffffff;
+    --surface-sunk: #ffffff;
+    --surface-raised: #ffffff;
+    --ink: #000000;
+    --ink-muted: #444444;
+    --line: #999999;
+    color-scheme: light;
+  }
+
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  /* A card is a box on screen because it separates; on paper the page edge
+   * already does that, and a grey fill costs toner for nothing. */
+  .card {
+    border-color: #999999;
+    break-inside: avoid;
+  }
+
+  /*
+   * Tables under charts are closed by default on screen. On paper the numbers
+   * are the point — a printed chart nobody can read values off is decoration.
+   *
+   * CSS cannot open a `<details>`; `::details-content` is the one hook that can
+   * reveal it, and it is not everywhere yet. Gated behind `@supports` so the
+   * summary only disappears where the table actually takes its place —
+   * otherwise the sheet would lose the affordance and gain nothing.
+   */
+  @supports selector(::details-content) {
+    details::details-content {
+      content-visibility: visible;
+      block-size: auto;
+    }
+    details > summary {
+      display: none;
+    }
+  }
+
+  a[href] {
+    text-decoration: none;
+    color: #000000;
+  }
 }

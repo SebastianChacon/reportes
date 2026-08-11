@@ -1,4 +1,7 @@
 import { isoDateOrNull, shiftDate, todayForOffice } from "./officeDate";
+import { SEARCH_ISSUES, type SearchIssue } from "./summaries";
+
+export type { SearchIssue };
 
 /**
  * What a search is, as a URL.
@@ -30,6 +33,8 @@ export type SearchFilters = {
   submittedBy: string | null;
   /** A roster id — who was on the crew, which is a different question. */
   personId: string | null;
+  /** One thing wrong with the report, so the summary's counts can be links. */
+  issue: SearchIssue | null;
 };
 
 /**
@@ -51,6 +56,7 @@ const PARAM = {
   jobNumber: "job",
   submittedBy: "filedBy",
   personId: "person",
+  issue: "issue",
 } as const;
 
 type Params = Record<string, string | string[] | undefined>;
@@ -98,9 +104,13 @@ export function searchRange(
 export function parseFilters(params: Params, at: Date = new Date()): SearchFilters {
   const range = searchRange(one(params, PARAM.from), one(params, PARAM.to), at);
   const status = text(params, PARAM.status);
+  const issue = text(params, PARAM.issue);
 
   return {
     ...range,
+    // Dropped rather than passed on if unknown, for the same reason status is:
+    // a stale bookmark should show a wider search, not an error page.
+    issue: SEARCH_ISSUES.includes(issue as SearchIssue) ? (issue as SearchIssue) : null,
     // An unknown status is dropped rather than passed to Convex, which would
     // reject it as an argument and turn a stale bookmark into an error page.
     status: STATUSES.includes(status as SearchStatus) ? (status as SearchStatus) : null,
@@ -127,6 +137,7 @@ export function toQuery(filters: SearchFilters): string {
   if (filters.jobNumber) query.set(PARAM.jobNumber, filters.jobNumber);
   if (filters.submittedBy) query.set(PARAM.submittedBy, filters.submittedBy);
   if (filters.personId) query.set(PARAM.personId, filters.personId);
+  if (filters.issue) query.set(PARAM.issue, filters.issue);
   return query.toString();
 }
 
@@ -153,7 +164,8 @@ export function isNarrowed(filters: SearchFilters): boolean {
       filters.clientName ||
       filters.jobNumber ||
       filters.submittedBy ||
-      filters.personId
+      filters.personId ||
+      filters.issue
   );
 }
 
@@ -175,6 +187,7 @@ export function toQueryArgs(filters: SearchFilters): {
   clientName?: string;
   jobNumber?: string;
   personId?: string;
+  issue?: SearchIssue;
 } {
   return {
     from: filters.from,
@@ -183,5 +196,6 @@ export function toQueryArgs(filters: SearchFilters): {
     ...(filters.clientName ? { clientName: filters.clientName } : {}),
     ...(filters.jobNumber ? { jobNumber: filters.jobNumber } : {}),
     ...(filters.personId ? { personId: filters.personId } : {}),
+    ...(filters.issue ? { issue: filters.issue } : {}),
   };
 }

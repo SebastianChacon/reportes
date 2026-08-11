@@ -1,8 +1,23 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { deskFonts } from "@/app/fonts";
 
 export const metadata: Metadata = {
   title: "Office — Back to Nature",
   description: "Daily job reports, as the office reads them",
+};
+
+/**
+ * The root layout pins `theme-color` light for the wizard, which is light in
+ * every condition. The console is not, and until now it never said so — the
+ * browser chrome stayed pale above a screen that had gone dark, which reads as
+ * the page having failed to load its own background. `/inicio` already declared
+ * this; the console had the same problem and no such line.
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f4f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d0d0d" },
+  ],
 };
 
 /**
@@ -20,7 +35,7 @@ export const metadata: Metadata = {
  */
 export default function OfficeLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div lang="en" data-surface="office" className="min-h-screen">
+    <div lang="en" data-surface="office" className={`${deskFonts} min-h-screen`}>
       {children}
     </div>
   );
