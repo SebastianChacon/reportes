@@ -232,7 +232,7 @@ export function SearchFilters({
           type="submit"
           disabled={searching}
           aria-busy={searching}
-          className="min-h-11 rounded-xl bg-[color:var(--accent)] px-5 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition active:scale-[0.99] disabled:opacity-60"
+          className="min-h-11 rounded-xl bg-[color:var(--accent)] px-5 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition enabled:hover:bg-[color:var(--accent-hover)] active:scale-[0.99] disabled:opacity-60"
         >
           {searching ? tc("searching") : tc("runSearch")}
         </button>

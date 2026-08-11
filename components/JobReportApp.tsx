@@ -481,7 +481,7 @@ export function JobReportApp() {
         </div>
         {!historyKept && (
           // The one case where "it's saved on your phone" would be a lie.
-          <p className="w-full rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] p-3 text-sm text-[color:var(--color-clay-600)]">
+          <p className="alert w-full rounded-xl p-3 text-sm text-[color:var(--danger)]">
             {t("historyFull", lang)}
           </p>
         )}
@@ -657,7 +657,7 @@ export function JobReportApp() {
             className={
               draftWarning === "ok"
                 ? "text-xs text-[color:var(--ink-muted)]"
-                : "text-xs font-medium text-[color:var(--color-clay-600)]"
+                : "text-xs font-medium text-[color:var(--danger)]"
             }
           >
             {draftWarning === "ok" && `✓ ${t("autosaved", lang)}`}

@@ -95,7 +95,7 @@ export function DescriptionField({
     <div>
       <label htmlFor="job-description" className="mb-1.5 block text-sm font-medium">
         {t("description", lang)}
-        <span className="ml-1 text-[color:var(--color-clay-600)]">*</span>
+        <span className="ml-1 text-[color:var(--danger)]">*</span>
       </label>
 
       <div className="relative">
@@ -163,7 +163,7 @@ export function DescriptionField({
             ))}
           </p>
           {coverage < 0.75 && (
-            <p className="mt-2 text-xs text-[color:var(--color-clay-600)]">
+            <p className="mt-2 text-xs text-[color:var(--danger)]">
               {lang === "es"
                 ? "El glosario reconoció menos de la mitad del texto — revisa la traducción antes de confiar en ella."
                 : "The glossary matched less than half of this text — read the translation before trusting it."}

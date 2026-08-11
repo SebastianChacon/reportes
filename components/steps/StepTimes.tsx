@@ -136,7 +136,7 @@ export function StepTimes({
       )}
 
       {errors.length > 0 && (
-        <p className="rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] px-3 py-2.5 text-sm font-semibold text-[color:var(--color-clay-600)]">
+        <p className="alert rounded-xl px-3 py-2.5 text-sm font-semibold text-[color:var(--danger)]">
           {t("timesFixFirst", lang)}
         </p>
       )}

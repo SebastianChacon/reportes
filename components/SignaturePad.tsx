@@ -46,7 +46,11 @@ export function SignaturePad({
     ctx.lineWidth = 2.2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.strokeStyle = "#18181b";
+    // `--ink`, written out: a canvas cannot read a custom property, and this
+    // stroke is also what ends up in the PDF. It was #18181b — a blue-tinted
+    // near-black from a palette this product no longer uses, which made the
+    // one handwritten mark on the page the only cool-toned thing on it.
+    ctx.strokeStyle = "#111111";
 
     if (previous) {
       const img = new Image();

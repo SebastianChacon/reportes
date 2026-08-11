@@ -35,7 +35,7 @@ export function TextField({
     <div>
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
         {label}
-        {required && <span className="ml-1 text-[color:var(--color-clay-600)]">*</span>}
+        {required && <span className="ml-1 text-[color:var(--danger)]">*</span>}
       </label>
       <input
         id={id}
@@ -102,7 +102,7 @@ export function TimeField({
         <p
           id={errorId}
           role="alert"
-          className="mt-1.5 text-xs font-medium text-[color:var(--color-clay-600)]"
+          className="mt-1.5 text-xs font-medium text-[color:var(--danger)]"
         >
           {error}
         </p>
@@ -214,10 +214,11 @@ export function Button({ variant = "secondary", full, className = "", ...rest }:
   const base =
     "touch-target inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] font-semibold transition active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100";
   const styles: Record<string, string> = {
-    primary: "bg-[color:var(--accent)] text-[color:var(--accent-contrast)] shadow-sm hover:brightness-110",
+    primary:
+      "bg-[color:var(--accent)] text-[color:var(--accent-contrast)] shadow-sm enabled:hover:bg-[color:var(--accent-hover)]",
     secondary: "border-[1.5px] border-[color:var(--line)] bg-[color:var(--surface-raised)]",
     ghost: "text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]",
-    danger: "border-[1.5px] border-[color:var(--color-clay-600)] text-[color:var(--color-clay-600)]",
+    danger: "border-[1.5px] border-[color:var(--danger)] text-[color:var(--danger)]",
   };
   return (
     <button

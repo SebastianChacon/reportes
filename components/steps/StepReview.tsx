@@ -79,8 +79,8 @@ export function StepReview({
   return (
     <div className="space-y-4">
       {missing.length > 0 && (
-        <div className="rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] bg-[color:var(--surface-raised)] p-4">
-          <p className="text-sm font-bold text-[color:var(--color-clay-600)]">
+        <div className="alert rounded-xl p-4">
+          <p className="text-sm font-bold text-[color:var(--danger)]">
             {t("missingFields", lang)}
           </p>
           <ul className="mt-2 space-y-1">
@@ -94,8 +94,8 @@ export function StepReview({
       )}
 
       {badTimes.length > 0 && (
-        <div className="rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] bg-[color:var(--surface-raised)] p-4">
-          <p className="text-sm font-bold text-[color:var(--color-clay-600)]">
+        <div className="alert rounded-xl p-4">
+          <p className="text-sm font-bold text-[color:var(--danger)]">
             {t("timesFixFirst", lang)}
           </p>
           <Button
@@ -308,7 +308,7 @@ export function StepReview({
       </Section>
 
       {status === "error" && (
-        <div className="rounded-xl border-[1.5px] border-[color:var(--color-clay-600)] p-3 text-sm text-[color:var(--color-clay-600)]">
+        <div className="alert rounded-xl p-3 text-sm text-[color:var(--danger)]">
           <p>{t(FAILURE_MESSAGE[failure?.reason ?? "network"], lang)}</p>
           {failure?.hint && (
             // The office needs the literal server reason to fix a config problem;

@@ -65,7 +65,7 @@ export function ReviewActions({ reportId, status }: { reportId: string; status: 
             type="button"
             disabled={busy !== null}
             onClick={() => send("approved")}
-            className="min-h-11 rounded-xl bg-[color:var(--accent)] px-4 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition active:scale-[0.99] disabled:opacity-50"
+            className="min-h-11 rounded-xl bg-[color:var(--accent)] px-4 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition enabled:hover:bg-[color:var(--accent-hover)] active:scale-[0.99] disabled:opacity-50"
           >
             {busy === "approve" ? tc("approving") : tc("approve")}
           </button>
@@ -118,7 +118,7 @@ export function ReviewActions({ reportId, status }: { reportId: string; status: 
               type="button"
               disabled={busy !== null || trimmed.length === 0}
               onClick={() => send("needs_review", trimmed)}
-              className="min-h-11 rounded-xl bg-[color:var(--accent)] px-4 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition active:scale-[0.99] disabled:opacity-40"
+              className="min-h-11 rounded-xl bg-[color:var(--accent)] px-4 text-[15px] font-semibold text-[color:var(--accent-contrast)] transition enabled:hover:bg-[color:var(--accent-hover)] active:scale-[0.99] disabled:opacity-40"
             >
               {busy === "sendBack" ? tc("sendingBack") : tc("sendBack")}
             </button>
