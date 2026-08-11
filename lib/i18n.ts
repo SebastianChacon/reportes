@@ -345,7 +345,7 @@ export const CONSOLE = {
   company: { en: "Back to Nature", es: "Back to Nature" },
   signOut: { en: "Sign out", es: "Salir" },
   // The one page in the product that is behind neither door.
-  backToOverview: { en: "Project overview", es: "Panel del proyecto" },
+  backToOverview: { en: "Back to the start", es: "Volver al inicio" },
   signedInAs: { en: "Signed in as", es: "Conectado como" },
 
   // Sign in
@@ -369,6 +369,18 @@ export const CONSOLE = {
   signInUnreachable: {
     en: "Could not reach the server. Check your connection and try again.",
     es: "No se pudo contactar al servidor. Revisa tu conexión e intenta de nuevo.",
+  },
+  /*
+   * Said out loud when the fields arrive already filled.
+   *
+   * Without it someone signs in with the demo account, sees 292 invented
+   * reports, and approves one believing it is a crew's real day. The whole
+   * point of the prefill is convenience at a demo; the cost of not labelling it
+   * is a manager acting on fiction.
+   */
+  signInDemo: {
+    en: "Demonstration account — the reports behind it are invented.",
+    es: "Cuenta de demostración — los reportes que hay detrás son inventados.",
   },
   signInUnconfigured: {
     en: "Sign-in is not set up on this server yet, so the console cannot be opened.",
@@ -900,32 +912,52 @@ export function tcf(
  */
 export const HOME = {
   // Shell
-  title: { en: "Project overview", es: "Panel del proyecto" },
+  title: { en: "Project status", es: "Estado del proyecto" },
   tagline: {
-    en: "Everything the Back to Nature job report does, and what this server has switched on.",
-    es: "Todo lo que hace el reporte de trabajo de Back to Nature, y qué tiene encendido este servidor.",
+    en: "What this server has switched on, and what came in today.",
+    es: "Qué tiene encendido este servidor, y qué llegó hoy.",
   },
   language: { en: "Language", es: "Idioma" },
 
-  // The two surfaces
-  surfaces: { en: "The two surfaces", es: "Las dos superficies" },
-  fieldTitle: { en: "Field wizard", es: "Asistente de campo" },
-  fieldBody: {
-    en: "Six steps on a phone, Spanish, light in every condition — it is read outdoors, where a dark theme is the wrong answer whatever the OS says.",
-    es: "Seis pasos en el teléfono, en español, siempre en claro — se lee al aire libre, donde un tema oscuro es la respuesta equivocada diga lo que diga el sistema.",
+  /*
+   * The chooser at `/`.
+   *
+   * Two doors and nothing else, so every word here is read — which is why the
+   * bodies are one short line each and not the paragraph the old overview cards
+   * carried. A screen whose entire content is two buttons cannot afford prose.
+   */
+  doorsLabel: { en: "Where are you going?", es: "¿A dónde vas?" },
+  doorFieldTitle: { en: "Report", es: "Reporte" },
+  doorFieldBody: {
+    en: "Fill in the day's report.",
+    es: "Llenar el reporte del día.",
   },
-  fieldCta: { en: "Open the wizard", es: "Abrir el asistente" },
-  officeTitle: { en: "Office console", es: "Consola de la oficina" },
-  officeBody: {
-    en: "The day, the search and one person's week. English, at a desk, and it follows the system into dark mode.",
-    es: "El día, la búsqueda y la semana de una persona. En inglés, en un escritorio, y sigue al sistema al modo oscuro.",
+  /* Not the title again. "Report → Report" reads as a rendering fault, and the
+   * verb is the half that says what happens when you press it. */
+  doorFieldCta: { en: "Start", es: "Empezar" },
+  doorAdminTitle: { en: "Administration", es: "Administración" },
+  doorAdminBody: {
+    en: "The day, the search, the hours.",
+    es: "El día, la búsqueda, las horas.",
   },
-  officeCta: { en: "Open the console", es: "Abrir la consola" },
-  officeSignInCta: { en: "Sign in to the console", es: "Entrar a la consola" },
-  officeLocked: {
+  /*
+   * "Sign in" rather than "Open", and a padlock beside it.
+   *
+   * The two doors are not symmetrical — one is open and the other wants a
+   * password — and the screen has to say so *before* the click. Without this
+   * the only way to learn the difference is to tap and land in a login nobody
+   * asked for, which is the exact moment an "intuitive" screen stops being one.
+   */
+  doorAdminSignIn: { en: "Sign in", es: "Entrar" },
+  doorAdminOpen: { en: "Open", es: "Abrir" },
+  doorAdminLocked: {
     en: "Not wired up on this server yet.",
     es: "Todavía no está conectada en este servidor.",
   },
+  doorLockedHint: { en: "Needs a password", es: "Pide contraseña" },
+
+  /** Still used by the status page, where the day's numbers sit behind the door. */
+  officeSignInCta: { en: "Sign in to the console", es: "Entrar a la consola" },
 
   // What this server has switched on
   status: { en: "What is switched on here", es: "Qué está encendido acá" },
@@ -1095,9 +1127,11 @@ export const HOME = {
   // Every screen
   routes: { en: "Every screen", es: "Todas las pantallas" },
   routesHint: {
-    en: "Six screens. The two with a name in the address are reached from inside, not typed.",
-    es: "Seis pantallas. Las dos que llevan un nombre en la dirección se alcanzan desde adentro, no se escriben.",
+    en: "Eight screens. The two with a name in the address are reached from inside, not typed.",
+    es: "Ocho pantallas. Las dos que llevan un nombre en la dirección se alcanzan desde adentro, no se escriben.",
   },
+  rtChooser: { en: "Two doors: report, or administration.", es: "Dos puertas: reporte, o administración." },
+  rtStatus: { en: "This page — what is switched on.", es: "Esta página — qué está encendido." },
   rtField: { en: "The wizard a foreman fills in.", es: "El asistente que llena el capataz." },
   rtSignIn: { en: "The console's door.", es: "La puerta de la consola." },
   rtDay: { en: "Today's board.", es: "El tablero de hoy." },

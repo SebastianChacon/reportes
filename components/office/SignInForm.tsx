@@ -1,16 +1,56 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { tc, tcf } from "@/lib/i18n";
+import type { SignInPrefill } from "@/lib/demoAccount";
 
 type Refusal = "bad_credentials" | "locked" | "not_office" | "unreachable" | "unconfigured";
 
-export function SignInForm() {
+/** Where the console starts when nothing else was asked for. */
+const HOME = "/office";
+
+/**
+ * Where to land after a successful sign-in.
+ *
+ * The console's gate sends an anonymous reader here with the page they wanted
+ * in `?next=`, so that pasting a link to one report does not deposit them on
+ * today's board with no idea what happened to the link.
+ *
+ * Anything that is not a path inside the console is discarded. Without that
+ * test this parameter is an open redirect: `?next=https://evil.example` would
+ * turn the company's own sign-in page into a way of bouncing a signed-in
+ * manager somewhere else. `startsWith("/office")` alone is not enough —
+ * `//evil.example` is protocol-relative and `/officexyz` is not the console —
+ * so both are excluded explicitly.
+ */
+export function safeNext(raw: string | null): string {
+  if (raw === null) return HOME;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return HOME;
+  if (raw !== HOME && !raw.startsWith(`${HOME}/`)) return HOME;
+  return raw;
+}
+
+/*
+ * `prefill` arrives from the server or not at all — see lib/demoAccount.ts.
+ *
+ * It is a prop rather than something this component works out for itself
+ * precisely so that a deployment without the variable ships no password in its
+ * JavaScript. A static import here would be bundled whether or not the branch
+ * that reads it ever runs.
+ *
+ * It can only ever be the demonstration account. The real office password could
+ * not be offered even in principle: to appear in the field it has to reach the
+ * browser, and anything the browser is given is public.
+ */
+export function SignInForm({ prefill = null }: { prefill?: SignInPrefill | null }) {
   const router = useRouter();
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const search = useSearchParams();
+  const next = safeNext(search.get("next"));
+
+  const [email, setEmail] = React.useState(prefill?.email ?? "");
+  const [password, setPassword] = React.useState(prefill?.password ?? "");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<{ reason: Refusal; minutes?: number } | null>(null);
 
@@ -41,7 +81,7 @@ export function SignInForm() {
         // `refresh` first so the gated layout re-runs with the new cookie
         // instead of replaying the anonymous render from the client cache.
         router.refresh();
-        router.replace("/office");
+        router.replace(next);
         return;
       }
 
@@ -59,6 +99,11 @@ export function SignInForm() {
       <form onSubmit={submit} className="card w-full p-6">
         <h1 className="text-lg font-bold tracking-tight">{tc("signInTitle")}</h1>
         <p className="mt-1 text-sm text-[color:var(--ink-muted)]">{tc("signInHint")}</p>
+
+        {/* Said out loud, because the alternative is somebody signing in with
+            these, seeing 292 invented reports, and approving one believing it
+            is a crew's real day. */}
+        {prefill && <p className="notice mt-4 text-sm">{tc("signInDemo")}</p>}
 
         <div className="mt-5 flex flex-col gap-4">
           <div>
@@ -116,12 +161,12 @@ export function SignInForm() {
       </form>
 
       {/* The way out for someone who arrived here and is not the person with
-          the password — a foreman following a link, most often. The overview is
-          the only page in the product that is not behind one door or the
-          other. */}
+          the password — a foreman following a link, most often. It goes to the
+          chooser, which is the screen that can send him to the wizard instead;
+          the status page it used to point at could not. */}
       <p className="mt-5 text-center text-sm">
         <Link
-          href="/inicio"
+          href="/"
           className="text-[color:var(--ink-muted)] underline decoration-[color:var(--line)] underline-offset-4 hover:text-[color:var(--ink)]"
         >
           {tc("backToOverview")}

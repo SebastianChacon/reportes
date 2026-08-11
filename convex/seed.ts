@@ -4,6 +4,7 @@ import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { buildSubmission } from "../lib/submission";
 import { DEMO_CREWS, DEMO_PREFIX, demoReports, isDemoId } from "../lib/demoData";
+import { DEMO_OFFICE_ACCOUNT } from "../lib/demoAccount";
 import { shiftDate, startOfWeek, todayForOffice } from "../lib/officeDate";
 
 /**
@@ -34,17 +35,14 @@ import { shiftDate, startOfWeek, todayForOffice } from "../lib/officeDate";
 const DEMO_PIN = "2468";
 
 /**
- * A console login to show the thing with.
+ * A console login to show the thing with. `clear` deletes it with the rest.
  *
- * Deliberately on `.test` — a reserved TLD that can never resolve — so nobody
- * can be emailed at it by accident, and so this address could never be mistaken
- * for a real person's account. `clear` deletes it with the rest.
+ * Defined in `lib/demoAccount.ts` rather than here, because the sign-in form
+ * now offers it as a prefill and a second copy of the pair would drift from
+ * this one — leaving a form that arrives pre-filled with a password the seed no
+ * longer sets. See the note there for why it is a door and not a credential.
  */
-const DEMO_OFFICE = {
-  email: "demo@backtonature.test",
-  name: "Demo (office)",
-  password: "demo-back-to-nature",
-} as const;
+const DEMO_OFFICE = DEMO_OFFICE_ACCOUNT;
 
 /** Reports older than this at the end of the run are treated as already reviewed. */
 const APPROVE_AFTER_DAYS = 14;

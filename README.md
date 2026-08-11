@@ -6,6 +6,24 @@ Bilingüe español / inglés, pensada para llenarse con una mano, con guantes y 
 
 ---
 
+## Las dos puertas
+
+La raíz `/` no es una pantalla de trabajo: pregunta una sola cosa y se aparta.
+
+| | | |
+|---|---|---|
+| **Reporte** | `/reporte` | El asistente del capataz. Sin sesión — un reporte a las 6am importa más que saber de quién es. |
+| **Administración** | `/office` | La consola. Pide correo y contraseña, y la portada lo dice con un candado antes del clic, no después. |
+
+Quien ya tiene sesión viva no ve el formulario: la tarjeta dice "Abrir" y va
+derecho. En un servidor sin `AUTH_SECRET` o sin Convex la tarjeta se muestra
+apagada en vez de enlazar a una pantalla que solo puede decir que falta
+configuración.
+
+`/inicio` es otra cosa y no está en la portada: es la página de estado —qué
+variables tiene encendidas este servidor, y qué llegó hoy—, enlazada desde la
+consola.
+
 ## Cómo funciona
 
 Un asistente de **6 pasos** en vez de una hoja de 200 casillas:
@@ -260,8 +278,11 @@ En el mismo archivo están `EQUIPMENT`, `MATERIALS`, `PLANT_CATEGORIES`, `SUBCON
 ## Estructura
 
 ```
+middleware.ts                 conserva el destino cuando la consola rechaza
 app/
-  page.tsx                    punto de entrada (el asistente del capataz)
+  page.tsx                    la portada — dos puertas y nada más
+  reporte/                    el asistente del capataz
+  inicio/                     la página de estado
   api/send-report/route.ts    email + PDF adjunto (Resend)
   api/auth/foreman/route.ts   enrolar / entrar con PIN → cookie
   api/auth/office/route.ts    entrar con correo y contraseña → cookie de 12 h

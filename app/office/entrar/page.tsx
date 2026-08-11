@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { officeAccess } from "@/lib/officeSession";
+import { signInPrefill } from "@/lib/demoAccount";
 import { Unconfigured } from "@/components/office/Unconfigured";
 import { SignInForm } from "@/components/office/SignInForm";
 
@@ -19,5 +20,8 @@ export default async function SignInPage() {
   if (access.state === "unconfigured") return <Unconfigured missing={access.missing} />;
   if (access.state === "ok") redirect("/office");
 
-  return <SignInForm />;
+  // Read here rather than inside the form, so that a deployment which is not a
+  // demonstration ships no password to the browser at all — not merely an
+  // unused one. See lib/demoAccount.ts.
+  return <SignInForm prefill={signInPrefill()} />;
 }

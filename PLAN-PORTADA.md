@@ -208,13 +208,21 @@ sí, y por eso el plan no lo hace ni ofrece una opción para hacerlo.
   par es lo que evita que el formulario ofrezca una contraseña que el seed ya
   cambió — y ese fallo se vería como "la demo no entra", que es el peor momento
   para descubrirlo.
-- El precargado se enciende con **`NEXT_PUBLIC_DEMO_SIGN_IN=1`**, y con nada
-  más. Un deployment que no la declara no precarga nada: **falla cerrado**, que
-  es la única forma segura de equivocarse acá. Poner la variable en el proyecto
-  de demostración es una línea; olvidarla en producción es el comportamiento
+- El precargado se enciende con **`DEMO_SIGN_IN=1`**, y con nada más. Un
+  deployment que no la declara no precarga nada: **falla cerrado**, que es la
+  única forma segura de equivocarse acá. Poner la variable en el proyecto de
+  demostración es una línea; olvidarla en producción es el comportamiento
   correcto.
-- `SignInForm` arranca su estado con el par en vez de con `""`, y muestra una
-  línea sobria arriba del formulario diciendo que son credenciales de
+- **Sin el prefijo `NEXT_PUBLIC_`, y eso decide todo.** La primera versión de
+  esto lo usaba, y estaba mal: `SignInForm` es un componente de cliente, así que
+  importar el par lo mete en `.next/static` **en todo build, con la variable
+  encendida o apagada** — un `import` estático se empaqueta se lo lea o no. Se
+  midió, no se supuso (`grep -rl demo-back-to-nature .next/static`), y ahí
+  estaba. La decisión se mudó al servidor: la página lee la variable y le pasa
+  la precarga como prop al formulario. Un build sin la variable ahora no lleva
+  ninguna contraseña.
+- `SignInForm` arranca su estado con lo que recibe en vez de con `""`, y muestra
+  una línea sobria arriba del formulario diciendo que son credenciales de
   demostración. Sin eso, alguien va a creer que la sesión que abrió es la suya y
   va a aprobar reportes de mentira pensando que son reales.
 - **No se auto-envía.** El pedido es "solo dar Entrar", y eso es exactamente lo
@@ -257,27 +265,35 @@ Nada de esto toca `lib/calc.ts`, `lib/pdf.ts`, `lib/storage.ts` ni ningún paso
 del asistente. **El riesgo está contenido en el ruteo y en la capa de
 presentación.**
 
-## 7. Cómo se verifica
+## 7. Cómo se verificó
 
-1. `npm run dev`, y recorrer `/` → `/reporte` → volver → `/` → "Entrar" →
-   `/office/entrar` → consola.
-2. **Los tres estados de la puerta de administración**, forzados por entorno:
-   sin `AUTH_SECRET` (apagada), con secreto y sin cookie ("Entrar"), con sesión
-   viva ("Abrir" y sin pasar por el login).
-3. **El destino conservado:** pegar `/office/reportes` sin sesión debe volver a
-   `/office/reportes` después de entrar, no a `/office`.
-4. **El redirect abierto:** `/office/entrar?next=https://otro.sitio` tiene que
-   ignorarse y caer en `/office`.
-5. **El precargado, por las dos puntas.** Con `NEXT_PUBLIC_DEMO_SIGN_IN=1`: los
-   campos llegan llenos y un solo clic entra. **Sin la variable: los campos
-   llegan vacíos**, y —lo que de verdad importa— `view-source` y el bundle de
-   JavaScript no contienen ninguna contraseña. Esto se mira, no se supone:
-   `grep -r "demo-back-to-nature" .next/static/` tiene que no devolver nada en
-   un build hecho sin la variable.
-5. A 375px y a 1440px; en claro y en oscuro; con el teclado solo (foco visible,
-   orden de tabulación: idioma → reportes → administración → estado).
-6. `npm run test` y `npm run build`. Los tests que existen son de `lib/`, que
-   este plan no toca — sirven como control de que no se rompió nada de paso.
+Hecho, no pendiente. Lo que sigue es lo que se corrió y lo que dio.
+
+1. **El recorrido**, contra el Convex de producción: `/` → `/reporte` (sale el
+   asistente) → `/office/entrar` → consola. ✅
+2. **Los tres estados de la puerta de administración:** sin configurar
+   (apagada), con secreto y sin cookie ("Entrar" + candado), con sesión viva
+   ("Abrir", sin candado, directo a `/office`). ✅
+3. **El destino conservado:** `/office/reportes` sin sesión redirige a
+   `/office/entrar?next=%2Foffice%2Freportes`. ✅
+4. **El redirect abierto:** entrar desde
+   `/office/entrar?next=https://evil.example/steal` aterriza en `/office`. ✅
+   Y quedó fijado en `components/office/__tests__/safeNext.test.ts`, incluidos
+   los dos casos que un chequeo ingenuo deja pasar: `//evil.example`
+   (protocolo-relativo) y `/officexyz` (comparte el prefijo, es otra ruta).
+5. **El precargado, por las dos puntas.** Con `DEMO_SIGN_IN=1`: campos llenos,
+   aviso de demostración, y entra con un clic. **Sin la variable: build limpio y
+   `grep -r "demo-back-to-nature" .next/static/` no devuelve nada** — tampoco el
+   correo. Esta medición es la que encontró el error descrito en el Paso 7 y
+   obligó a mover la decisión al servidor. ✅
+6. A 375px y a 1440px, en claro y en oscuro. ✅ Acá apareció el segundo error:
+   la tarjeta rellena usaba `.card`, que fija `background` en una regla sin capa
+   y por eso le gana a la utilidad de Tailwind — en oscuro quedaba tinta casi
+   negra sobre tarjeta casi negra, o sea un botón invisible. La tarjeta rellena
+   ya no usa `.card`.
+7. `npm run test` (354 en 26 archivos) y `npm run build`. ✅ Los errores de tipos
+   en `components/steps/__tests__/StepJob.test.tsx` son **previos a esta rama** —
+   confirmado corriendo `tsc` contra el árbol limpio.
 
 ## 8. Lo que este plan no hace
 
