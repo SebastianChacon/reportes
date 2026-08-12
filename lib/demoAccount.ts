@@ -9,9 +9,9 @@
  * in front of whoever is being shown the product.
  *
  * **This is not a secret and must never be treated as one.** It is checked into
- * a public repository, it is compiled into the browser bundle whenever
- * `NEXT_PUBLIC_DEMO_SIGN_IN` is set, and the account it opens holds nothing but
- * invented reports written by `seed:demo`. It is a door, not a credential.
+ * a public repository, it is compiled into the browser bundle, and the account
+ * it opens holds nothing but invented reports written by `seed:demo`. It is a
+ * door, not a credential.
  *
  * The address is on `.test` — a reserved TLD that can never resolve — so nobody
  * can be emailed at it by accident and it can never be mistaken for a real
@@ -23,29 +23,28 @@ export const DEMO_OFFICE_ACCOUNT = {
   password: "demo-back-to-nature",
 } as const;
 
-/** What the sign-in form starts with when this deployment is a demonstration. */
-export type SignInPrefill = { email: string; password: string };
-
 /**
- * The prefill for the sign-in form, or `null` on any normal deployment.
+ * What the sign-in form starts with.
  *
- * **Server-only, and that is the entire security property.** The first version
- * of this exported the pair as a constant and let the client form decide at
- * runtime whether to use it — which put the password in `.next/static` on every
- * build, flag or no flag, because a static import is bundled whether or not it
- * is reached. Measured, not assumed: `grep -rl demo-back-to-nature .next/static`
- * found it. So the decision moved here, the form receives a prop, and a build
- * with the variable unset ships no password at all.
+ * Unconditional on purpose. This used to sit behind a `DEMO_SIGN_IN` variable
+ * that every environment had to set for itself, which meant the feature was
+ * absent by default and looked broken everywhere it had not been configured —
+ * including on the developer's own machine. The whole point is that the fields
+ * are already full; a version of that which needs setting up is not it.
  *
- * `DEMO_SIGN_IN` deliberately has no `NEXT_PUBLIC_` prefix. That prefix is what
- * inlines a value into the browser bundle, and nothing about this needs to be
- * readable there — the page that calls this is a server component.
+ * The cost of dropping the flag is that this pair now ships in every build,
+ * which is only a cost if it is a secret. It is not: it is a literal in a public
+ * repository opening an account that holds invented reports. See above.
  *
- * Unset means no prefill, so forgetting the variable in production is the safe
- * outcome. There is no way to misconfigure this that leaks a password rather
- * than withholding one.
+ * **Remove this when the demonstration is over.** The line to delete is the
+ * initial state in `components/office/SignInForm.tsx`; the account itself goes
+ * with `npx convex run seed:clear`.
+ *
+ * Annotated as plain `string`, not inferred. Without the annotation the literals
+ * narrow to their own values and `setEmail` stops accepting anything else —
+ * which would make the two fields un-typeable, the exact opposite of a prefill.
  */
-export function signInPrefill(env = process.env): SignInPrefill | null {
-  if ((env.DEMO_SIGN_IN ?? "").trim() !== "1") return null;
-  return { email: DEMO_OFFICE_ACCOUNT.email, password: DEMO_OFFICE_ACCOUNT.password };
-}
+export const SIGN_IN_PREFILL: { email: string; password: string } = {
+  email: DEMO_OFFICE_ACCOUNT.email,
+  password: DEMO_OFFICE_ACCOUNT.password,
+};
