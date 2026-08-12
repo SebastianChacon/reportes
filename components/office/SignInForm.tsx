@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { tc, tcf } from "@/lib/i18n";
-import type { SignInPrefill } from "@/lib/demoAccount";
+import { SIGN_IN_PREFILL } from "@/lib/demoAccount";
 
 type Refusal = "bad_credentials" | "locked" | "not_office" | "unreachable" | "unconfigured";
 
@@ -33,24 +33,20 @@ export function safeNext(raw: string | null): string {
 }
 
 /*
- * `prefill` arrives from the server or not at all — see lib/demoAccount.ts.
- *
- * It is a prop rather than something this component works out for itself
- * precisely so that a deployment without the variable ships no password in its
- * JavaScript. A static import here would be bundled whether or not the branch
- * that reads it ever runs.
+ * Both fields start full — see `SIGN_IN_PREFILL` in lib/demoAccount.ts for what
+ * that pair is and when to take it out again.
  *
  * It can only ever be the demonstration account. The real office password could
  * not be offered even in principle: to appear in the field it has to reach the
  * browser, and anything the browser is given is public.
  */
-export function SignInForm({ prefill = null }: { prefill?: SignInPrefill | null }) {
+export function SignInForm() {
   const router = useRouter();
   const search = useSearchParams();
   const next = safeNext(search.get("next"));
 
-  const [email, setEmail] = React.useState(prefill?.email ?? "");
-  const [password, setPassword] = React.useState(prefill?.password ?? "");
+  const [email, setEmail] = React.useState(SIGN_IN_PREFILL.email);
+  const [password, setPassword] = React.useState(SIGN_IN_PREFILL.password);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<{ reason: Refusal; minutes?: number } | null>(null);
 
@@ -103,7 +99,7 @@ export function SignInForm({ prefill = null }: { prefill?: SignInPrefill | null 
         {/* Said out loud, because the alternative is somebody signing in with
             these, seeing 292 invented reports, and approving one believing it
             is a crew's real day. */}
-        {prefill && <p className="notice mt-4 text-sm">{tc("signInDemo")}</p>}
+        <p className="notice mt-4 text-sm">{tc("signInDemo")}</p>
 
         <div className="mt-5 flex flex-col gap-4">
           <div>
