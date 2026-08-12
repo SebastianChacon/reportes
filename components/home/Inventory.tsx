@@ -84,7 +84,9 @@ const ROUTES: {
   href?: string;
   from?: HomeKey;
 }[] = [
-  { path: "/", what: "rtField", href: "/" },
+  { path: "/", what: "rtChooser", href: "/" },
+  { path: "/reporte", what: "rtField", href: "/reporte" },
+  { path: "/inicio", what: "rtStatus", href: "/inicio" },
   { path: "/office/entrar", what: "rtSignIn", href: "/office/entrar" },
   { path: "/office", what: "rtDay", href: "/office" },
   { path: "/office/reportes", what: "rtSearch", href: "/office/reportes" },

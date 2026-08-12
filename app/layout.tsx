@@ -6,14 +6,24 @@ export const metadata: Metadata = {
   description: "Daily job report / Reporte diario de trabajo",
 };
 
+/**
+ * `theme-color` is deliberately absent here.
+ *
+ * It used to be pinned light, which was right when `/` was the wizard. It is
+ * wrong now that `/` is the chooser and follows the system into dark: a fixed
+ * light chrome above a dark page reads as a failed background. Each surface
+ * declares its own instead — see `app/reporte/layout.tsx` (always light),
+ * `app/inicio/layout.tsx` and `app/office/layout.tsx` (per scheme), and the
+ * `viewport` export on the chooser itself.
+ *
+ * What stays is what every screen shares: the form is dense, so pinch-zoom must
+ * remain available on all of them.
+ */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // The form is dense; pinch-zoom must stay available.
   maximumScale: 5,
   viewportFit: "cover",
-  // Always light: the app stays white even when the OS/browser is in dark mode.
-  themeColor: "#f4f4f4",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

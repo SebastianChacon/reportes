@@ -63,8 +63,6 @@ export function HomeShell({
     saveLang(next);
   };
 
-  const consoleReady = status.capabilities.find((c) => c.id === "console")?.state === "ready";
-
   return (
     // `lang` sits here rather than on <html>, which the root layout owns and
     // declares as Spanish. A subtree in another language is what this attribute
@@ -85,102 +83,16 @@ export function HomeShell({
         <LanguageToggle lang={lang} onChange={changeLang} />
       </header>
 
+      {/* The two doors used to open this page. They are the whole of `/` now,
+          and a screen that exists to answer "what is switched on" should not
+          also be trying to route anybody. */}
       <div className="mt-8 flex flex-col gap-9">
-        <Surfaces lang={lang} consoleReady={consoleReady} access={access} />
         <TodayPanel lang={lang} today={today} access={access} />
         <StatusPanel lang={lang} status={status} />
         <Inventory lang={lang} />
         <Routes lang={lang} />
       </div>
     </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* The two doors                                                       */
-/* ------------------------------------------------------------------ */
-
-function Surfaces({
-  lang,
-  consoleReady,
-  access,
-}: {
-  lang: Lang;
-  consoleReady: boolean;
-  access: Access;
-}) {
-  return (
-    <section className="grid gap-3 md:grid-cols-2" aria-label={th("surfaces", lang)}>
-      <SurfaceCard
-        lang={lang}
-        title={th("fieldTitle", lang)}
-        body={th("fieldBody", lang)}
-        cta={th("fieldCta", lang)}
-        href="/"
-      />
-
-      <SurfaceCard
-        lang={lang}
-        title={th("officeTitle", lang)}
-        body={th("officeBody", lang)}
-        // A console with nothing behind it is said, not linked. The card that
-        // cannot be opened is still worth showing: it is half of what this
-        // product is, and hiding it would make the page describe a smaller
-        // product than the one that is installed.
-        cta={
-          !consoleReady
-            ? null
-            : access === "in"
-              ? th("officeCta", lang)
-              : th("officeSignInCta", lang)
-        }
-        href={access === "in" ? "/office" : "/office/entrar"}
-        note={consoleReady ? undefined : th("officeLocked", lang)}
-      />
-    </section>
-  );
-}
-
-function SurfaceCard({
-  title,
-  body,
-  cta,
-  href,
-  note,
-}: {
-  lang: Lang;
-  title: string;
-  body: string;
-  cta: string | null;
-  href: string;
-  note?: string;
-}) {
-  const inner = (
-    <>
-      <h2 className="text-lg font-bold tracking-tight">{title}</h2>
-      <p className="mt-2 flex-1 text-sm leading-relaxed text-[color:var(--ink-muted)]">{body}</p>
-      {cta ? (
-        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--ink)]">
-          {cta}
-          <IconArrowRight />
-        </span>
-      ) : (
-        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[color:var(--ink-muted)]">
-          <IconDash />
-          {note}
-        </span>
-      )}
-    </>
-  );
-
-  const shell = "card flex min-h-[11rem] flex-col p-5 sm:p-6";
-
-  return cta ? (
-    <Link href={href} className={`press ${shell}`}>
-      {inner}
-    </Link>
-  ) : (
-    <div className={shell}>{inner}</div>
   );
 }
 
