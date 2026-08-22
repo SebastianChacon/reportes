@@ -241,3 +241,86 @@ export const crewDayFields = {
   reportId: v.id("reports"),
   ...submittedCrewDayFields,
 };
+
+/* ------------------------------------------------------------------ */
+/* The production board                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The five markers that live in the tray under the whiteboard.
+ *
+ * Colour is decoration on every other console screen — the office is drawn in
+ * one ink on purpose — but here it is the data. The wall codes a job by the pen
+ * it was written with, and a board that stored "red" as a style rather than as a
+ * field could not answer the question the wall is asked all day: which of these
+ * are Nelson's.
+ */
+export const markerColor = v.union(
+  v.literal("red"),
+  v.literal("green"),
+  v.literal("blue"),
+  v.literal("orange"),
+  v.literal("ink")
+);
+
+/** Weeks for the production wall, days for the Enhancements panel beside it. */
+export const boardScale = v.union(v.literal("week"), v.literal("day"));
+
+/**
+ * One stroke of marker.
+ *
+ * `id` is a plain string minted by whoever drew it, not a Convex id: bars live
+ * inside their row rather than in a table of their own, because a bar is never
+ * read except with the row it sits on, and moving one is then a single write
+ * that cannot half-succeed.
+ */
+export const calendarBar = v.object({
+  id: v.string(),
+  /** Column index. Clipped to the ruler on the way in — see `lib/calendarBoard.ts`. */
+  start: v.number(),
+  span: v.number(),
+  color: markerColor,
+  label: v.optional(v.string()),
+  tentative: v.optional(v.boolean()),
+});
+
+export const calendarBoardFields = {
+  /** Stable name the URL and the seed both use: "production", "enhancements". */
+  key: v.string(),
+  title: v.string(),
+  scale: boardScale,
+  /** ISO date of column 0 — a Monday, on a weekly board. */
+  startDate: v.string(),
+  columns: v.number(),
+  /** Vertical rules across the whole board: Labor Day, a deadline, a shutdown. */
+  markers: v.array(
+    v.object({ id: v.string(), column: v.number(), label: v.string(), color: markerColor })
+  ),
+  /** The groups of rows, in the order they hang — the gaps on the wall. */
+  sections: v.array(v.object({ id: v.string(), title: v.string() })),
+  updatedAt: v.string(),
+  updatedBy: v.optional(v.id("users")),
+};
+
+export const calendarRowFields = {
+  boardKey: v.string(),
+  section: v.string(),
+  /**
+   * Sparse, and per board rather than per section. Rows are appended by two
+   * people at once often enough that positions in an array would fight; a number
+   * with gaps lets a row move without rewriting its neighbours.
+   */
+  order: v.number(),
+  /** The client, or the crew — whatever is written in the left-hand column. */
+  label: v.string(),
+  /** Designer, construction manager, project manager. */
+  d: v.optional(v.string()),
+  cm: v.optional(v.string()),
+  pm: v.optional(v.string()),
+  /** The smaller hand underneath: "on hold", or a crew's clients. */
+  note: v.optional(v.string()),
+  color: markerColor,
+  bars: v.array(calendarBar),
+  updatedAt: v.string(),
+  updatedBy: v.optional(v.id("users")),
+};

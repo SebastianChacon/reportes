@@ -10,6 +10,7 @@
 
 import type * as analytics from "../analytics.js";
 import type * as auth from "../auth.js";
+import type * as calendar from "../calendar.js";
 import type * as office from "../office.js";
 import type * as photos from "../photos.js";
 import type * as reports from "../reports.js";
@@ -25,6 +26,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   auth: typeof auth;
+  calendar: typeof calendar;
   office: typeof office;
   photos: typeof photos;
   reports: typeof reports;
