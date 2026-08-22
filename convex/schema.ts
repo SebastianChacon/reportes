@@ -1,6 +1,12 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { crewDayFields, reportFields, userFields } from "./validators";
+import {
+  calendarBoardFields,
+  calendarRowFields,
+  crewDayFields,
+  reportFields,
+  userFields,
+} from "./validators";
 
 export default defineSchema({
   reports: defineTable(reportFields)
@@ -27,6 +33,20 @@ export default defineSchema({
     storageId: v.id("_storage"),
     order: v.number(),
   }).index("by_report", ["reportId"]),
+
+  /**
+   * The production board — the whiteboard on the office wall, editable.
+   *
+   * Two tables rather than one document per board: the board is edited by
+   * several people at once, and a single document would make two of them
+   * writing different rows a conflict. A row is the unit that gets dragged, so
+   * a row is the unit that gets written.
+   */
+  calendarBoards: defineTable(calendarBoardFields).index("by_key", ["key"]),
+
+  calendarRows: defineTable(calendarRowFields)
+    /** Every read is "this board, in order" — there is no other question asked. */
+    .index("by_board_order", ["boardKey", "order"]),
 
   users: defineTable(userFields)
     /**

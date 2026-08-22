@@ -5,8 +5,13 @@ import { usePathname } from "next/navigation";
 import { tc } from "@/lib/i18n";
 
 /**
- * The three places the console goes, in the order the questions get asked:
- * what happened today, where did the month go, and where is that one report.
+ * The four places the console goes, in the order the questions get asked:
+ * what happened today, what is coming, where did the month go, and where is
+ * that one report.
+ *
+ * The board sits second because it is the only one of the four that is *edited*
+ * rather than read — it is where the afternoon's work goes, so it is not made
+ * the furthest tab from the day board people start on.
  *
  * A client component only so the current page can say it is the current page —
  * `aria-current` rather than colour alone, so the answer to "where am I" does
@@ -14,6 +19,7 @@ import { tc } from "@/lib/i18n";
  */
 const LINKS = [
   { href: "/office", label: "navDay" },
+  { href: "/office/calendar", label: "navCalendar" },
   { href: "/office/resumen", label: "navSummary" },
   { href: "/office/reportes", label: "navSearch" },
 ] as const;
@@ -43,7 +49,17 @@ export function ConsoleNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label={tc("office")} className="flex items-center gap-1">
+    /*
+      Scrollable rather than wrapping. The header note in the console layout
+      counts the pieces that fit on one line at 375px, and the fourth tab is
+      past that count — a nav that wrapped would push the day's numbers off the
+      screen on every phone, while one that scrolls costs nothing to anyone
+      whose window is wide enough.
+    */
+    <nav
+      aria-label={tc("office")}
+      className="-mx-1 flex items-center gap-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
       {LINKS.map((link) => {
         const current = owns(pathname, link.href);
 

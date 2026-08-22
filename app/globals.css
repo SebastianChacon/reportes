@@ -676,3 +676,174 @@ input[type="number"]::-webkit-inner-spin-button {
     color: #000000;
   }
 }
+
+/*
+ * ------------------------------------------------------------------
+ * The production board
+ * ------------------------------------------------------------------
+ *
+ * The one screen in this console that is allowed colour, and it is worth saying
+ * exactly why, because §0 of PLAN-BLANCO-Y-NEGRO.md argues at length that colour
+ * had to go.
+ *
+ * That argument was about colour used as a *channel the design invented*: two
+ * series in a chart, a status pill. Nothing was lost by replacing them, because
+ * the reader was never told what the hues meant — they had to be learned.
+ *
+ * Here the hue is not a rendering choice, it is the datum. The office schedules
+ * with four markers and a wall; "the red ones" is a sentence people in that
+ * office already say, and a board that answered it in hatching would be a
+ * translation of their notation rather than a copy of it. So the colours are
+ * stored (`markerColor` in `convex/validators.ts`) and painted.
+ *
+ * What the rest of the plan still buys, and what is kept here:
+ *
+ *  · **Colour is never the only channel.** Every bar carries its row's name and
+ *    every bar can carry a label; a marker is a colour AND a word.
+ *  · **The console around it stays in one ink.** The buttons, the fields and the
+ *    chrome on this page are the same greys as everywhere else. The colour is
+ *    inside the frame, where the whiteboard is.
+ *  · **It survives the photocopier and forced colours** — see the two blocks at
+ *    the end of this section.
+ */
+[data-surface="office"] {
+  /*
+   * Marker inks.
+   *
+   * Not the pens' own colours, which are near-fluorescent on a white wall and
+   * illegible at 3px on a screen. Each is darkened to clear 4.5:1 against the
+   * board — a bar 3px tall is small text as far as contrast is concerned.
+   */
+  --marker-red: #b3261e;
+  --marker-green: #10715a;
+  --marker-blue: #1f5fa9;
+  --marker-orange: #b45309;
+  --marker-ink: #1f2421;
+
+  /* The whiteboard itself: never pure white — a wall never is, and the grid
+     needs something to sit on. */
+  --board: #f7f8f6;
+  --board-rule: #b9c2bf;
+  --board-frame: linear-gradient(160deg, #dcdfdc, #a9afae 45%, #c9cdca);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-surface="office"] {
+    /*
+     * In the dark the wall is a slate, not a white rectangle: a lit whiteboard
+     * in a dark console is a lamp pointed at the reader.
+     *
+     * The inks go up rather than down, since they now sit on a dark ground —
+     * these clear 4.5:1 against `--board` below, which the light values would
+     * not have.
+     */
+    --marker-red: #ff8a80;
+    --marker-green: #5fd6ac;
+    --marker-blue: #86bdff;
+    --marker-orange: #ffb95e;
+    --marker-ink: #e8e8e4;
+
+    --board: #171a19;
+    --board-rule: #333b39;
+    --board-frame: linear-gradient(160deg, #3a3d3c, #242726 45%, #333635);
+  }
+}
+
+/*
+ * How wide the sticky left block is.
+ *
+ * Every row is laid out against `--names` — the name block is exactly this wide
+ * and the bars start exactly here — so it is one number in one place. It lives
+ * in CSS rather than in the component's inline style for one reason: it has to
+ * answer to the viewport.
+ *
+ * On a phone the wide value is the whole screen. A 21rem name column on a 375px
+ * board leaves about forty pixels of timeline, which is a schedule with no
+ * schedule in it — so below `md` the credits are dropped (see `BoardView`) and
+ * the names give their width back to the bars.
+ *
+ * The wide value itself is a measurement, not a round number: the three credit
+ * columns plus the longest client on the wall, without an ellipsis.
+ */
+[data-board-scale="week"] {
+  --names: 10.5rem;
+}
+
+[data-board-scale="day"] {
+  --names: 9rem;
+}
+
+@media (min-width: 768px) {
+  [data-board-scale="week"] {
+    --names: 21rem;
+  }
+
+  [data-board-scale="day"] {
+    --names: 12rem;
+  }
+}
+
+/*
+ * The ruled squares.
+ *
+ * A background image rather than borders on the cells: the columns are drawn by
+ * percentage and a border would land on a fractional pixel and thicken every
+ * fourth line. Two repeating gradients cost one paint and never do that.
+ */
+.board-surface {
+  background-color: var(--board);
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in srgb, var(--board-rule) 45%, transparent) 0 1px,
+      transparent 1px 22px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--board-rule) 45%, transparent) 0 1px,
+      transparent 1px 22px
+    );
+}
+
+/* Dashed is how the wall says "probably, not yet". Drawn in `currentColor` so
+   the same rule works for every ink and survives forced colours. */
+.board-bar-tentative {
+  background-image: repeating-linear-gradient(
+    90deg,
+    currentColor 0 9px,
+    transparent 9px 16px
+  );
+}
+
+@media (forced-colors: active) {
+  /*
+   * Forced colours repaints every fill, so four inks become one. The bars keep
+   * their identity through their outline and their label instead — which is the
+   * same reason the row name is never dropped at small sizes.
+   */
+  .board-bar {
+    border: 1px solid CanvasText;
+  }
+  .board-surface {
+    background-image: none;
+  }
+}
+
+@media print {
+  /*
+   * On paper the board is the one thing worth the toner, so the fills are told
+   * to print. Without this the bars come out blank and the sheet is a list of
+   * client names with nothing beside them.
+   */
+  .board-bar,
+  .board-surface {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* A board wider than the sheet: the frame is allowed to spill rather than to
+     clip, so at least the first months print in full. */
+  .board-scroll {
+    overflow: visible !important;
+  }
+}

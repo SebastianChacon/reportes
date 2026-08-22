@@ -865,6 +865,101 @@ export const CONSOLE = {
     en: "Every one of these is a link to the reports it counts.",
     es: "Cada uno de estos es un link a los reportes que cuenta.",
   },
+
+  /* ---------------------------------------------------------------- */
+  /* The production board                                              */
+  /* ---------------------------------------------------------------- */
+
+  navCalendar: { en: "The board", es: "El tablero" },
+  boardTitle: { en: "The production board", es: "El tablero de producción" },
+  boardLead: {
+    en: "The wall in the office, editable. Drag across a line to draw a job; drag a bar to move it, or its ends to lengthen it.",
+    es: "La pared de la oficina, editable. Arrastra sobre una línea para dibujar un trabajo; arrastra una barra para moverla, o sus extremos para alargarla.",
+  },
+  boardEmpty: { en: "Nothing on the board yet", es: "Todavía no hay nada en el tablero" },
+  boardEmptyHint: {
+    en: "Start it from the photograph of the wall — the clients, the crews and the two weeks of enhancements — and edit from there. Or add the first line yourself.",
+    es: "Empiézalo desde la foto de la pared — los clientes, las cuadrillas y las dos semanas de enhancements — y edítalo desde ahí. O agrega tú la primera línea.",
+  },
+  boardSeed: { en: "Fill it from the wall", es: "Llenarlo desde la pared" },
+  boardSeeding: { en: "Filling…", es: "Llenando…" },
+  boardStartBlank: { en: "Start with one empty line", es: "Empezar con una línea vacía" },
+  boardTruncated: {
+    en: "This board is longer than the screen will draw. Split it into a second board.",
+    es: "Este tablero es más largo de lo que la pantalla dibuja. Divídelo en un segundo tablero.",
+  },
+
+  boardSaving: { en: "Saving…", es: "Guardando…" },
+  boardSaved: { en: "Saved", es: "Guardado" },
+  boardSaveFailed: {
+    en: "That change did not save. It is still on your screen — try again.",
+    es: "Ese cambio no se guardó. Sigue en tu pantalla — intenta de nuevo.",
+  },
+  boardRetry: { en: "Try again", es: "Intentar de nuevo" },
+  boardRefresh: { en: "Refresh", es: "Actualizar" },
+
+  boardSettings: { en: "The ruler", es: "La regleta" },
+  boardStartDate: { en: "Starts", es: "Empieza" },
+  boardColumns: { en: "Columns", es: "Columnas" },
+  boardScaleWeek: { en: "By week", es: "Por semana" },
+  boardScaleDay: { en: "By day", es: "Por día" },
+  boardAddMarker: { en: "Mark a date", es: "Marcar una fecha" },
+  boardMarkerLabel: { en: "What it marks", es: "Qué marca" },
+  boardMarkerRemove: { en: "Remove the mark", es: "Quitar la marca" },
+  boardToday: { en: "Today", es: "Hoy" },
+
+  boardColClient: { en: "Client", es: "Cliente" },
+  boardColDLong: { en: "Designer", es: "Diseñador" },
+  boardColCmLong: { en: "Construction manager", es: "Jefe de obra" },
+  boardColPmLong: { en: "Project manager", es: "Jefe de proyecto" },
+  boardNote: { en: "Note", es: "Nota" },
+
+  boardAddRow: { en: "Add a line", es: "Agregar una línea" },
+  boardAddGroup: { en: "Add a group", es: "Agregar un grupo" },
+  boardGroupTitle: { en: "Group name", es: "Nombre del grupo" },
+  boardRowMenu: { en: "This line", es: "Esta línea" },
+  boardMoveUp: { en: "Move up", es: "Subir" },
+  boardMoveDown: { en: "Move down", es: "Bajar" },
+  boardDeleteRow: { en: "Delete the line", es: "Borrar la línea" },
+  boardDeleteRowSure: {
+    en: "Delete this line and everything drawn on it?",
+    es: "¿Borrar esta línea y todo lo dibujado en ella?",
+  },
+  boardDeleteGroup: { en: "Delete the group", es: "Borrar el grupo" },
+  boardDeleteGroupSure: {
+    en: "Delete this group? Its lines go with it.",
+    es: "¿Borrar este grupo? Sus líneas se van con él.",
+  },
+
+  boardAddBar: { en: "Add a bar", es: "Agregar una barra" },
+  boardBarLabel: { en: "Written on it", es: "Escrito encima" },
+  boardBarFrom: { en: "From", es: "Desde" },
+  boardBarSpan: { en: "How long", es: "Cuánto dura" },
+  boardBarTentative: { en: "Not confirmed", es: "Sin confirmar" },
+  boardBarDelete: { en: "Erase it", es: "Borrarla" },
+  boardBarColor: { en: "Marker", es: "Rotulador" },
+  boardDone: { en: "Done", es: "Listo" },
+
+  boardInkRed: { en: "Red", es: "Rojo" },
+  boardInkGreen: { en: "Green", es: "Verde" },
+  boardInkBlue: { en: "Blue", es: "Azul" },
+  boardInkOrange: { en: "Orange", es: "Naranja" },
+  boardInkInk: { en: "Black", es: "Negro" },
+
+  boardKeys: {
+    en: "With a keyboard: tab to a bar, then arrows move it, shift and arrows lengthen it, Enter opens it, Delete erases it.",
+    es: "Con teclado: tabula hasta una barra; las flechas la mueven, mayúsculas y flechas la alargan, Enter la abre, Suprimir la borra.",
+  },
+  boardBarAt: {
+    en: "{label}, from {from} for {span}",
+    es: "{label}, desde {from} durante {span}",
+  },
+  boardWeeksN: { en: "{n} weeks", es: "{n} semanas" },
+  boardDaysN: { en: "{n} days", es: "{n} días" },
+  boardLine: { en: "Line on the board", es: "Línea del tablero" },
+  boardEmptyRow: { en: "Nothing drawn here yet", es: "Nada dibujado aquí todavía" },
+  boardUnnamed: { en: "New line", es: "Línea nueva" },
+  boardStrays: { en: "Not in any group", es: "Sin grupo" },
 } as const;
 
 export type ConsoleKey = keyof typeof CONSOLE;
